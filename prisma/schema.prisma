@@ -1,0 +1,338 @@
+// Sketchy Soul — data model
+//
+// The Google Sheet is where you (the admin) actually work day to day.
+// Postgres exists for one reason: a payment webhook arrives minutes after the
+// customer left the site, so the order details + photo links must be stored
+// somewhere durable in between. It also gives you idempotent webhooks, a
+// retry queue for failed Sheet writes, and an audit trail for refunds.
+//
+// ⚠️ DEPLOY: run `npx prisma migrate deploy` once against your production
+// database (see DEPLOYMENT.md §3). `npm run build` only generates the client.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled connection (serverless-safe)
+  directUrl = env("DIRECT_URL") // direct connection, used by migrations
+}
+
+enum OrderStatus {
+  DRAFT // created, customer has not been sent to the payment page yet
+  AWAITING_PAYMENT // redirected to Stripe / PayPal
+  PAID // money captured — this is what triggers the Google Sheet row
+  FAILED // payment declined or expired
+  CANCELLED // customer backed out
+  REFUNDED
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+}
+
+enum SyncStatus {
+  PENDING
+  SYNCED
+  FAILED
+}
+
+model Order {
+  id        String @id @default(cuid())
+  // Short human-friendly code shown to the customer, e.g. "SS-7F3K2Q".
+  reference String @unique
+
+  status OrderStatus @default(DRAFT)
+
+  // ── What was bought (prices are ALWAYS recomputed server-side) ──────────
+  packageId    String
+  packageName  String
+  packageSize  String
+  addOns       Json   @default("[]") // [{ id, name, amount }]
+  style        String // "graphite" | "colour" | "charcoal"
+  subjects     Int    @default(1)
+  deliveryType String // "digital" | "rolled" | "framed"
+
+  currency    String @default("usd")
+  subtotal    Int // minor units (cents)
+  addOnsTotal Int    @default(0)
+  shipping    Int    @default(0)
+  total       Int
+
+  // ── Who bought it ───────────────────────────────────────────────────────
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  country       String
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  postalCode    String?
+
+  occasion  String?
+  deadline  String?
+  notes     String? @db.Text
+  consented Boolean @default(false) // agreed to terms + likeness usage
+
+  // ── Reference photos (Cloudinary URLs — never the image bytes) ──────────
+  // [{ url, pathname, name, size, contentType }]
+  photos Json @default("[]")
+
+  // ── Payment ─────────────────────────────────────────────────────────────
+  provider          PaymentProvider?
+  providerOrderId   String? // Stripe session id / PayPal order id
+  providerPaymentId String? // Stripe payment_intent / PayPal capture id
+  paidAt            DateTime?
+
+  /// What the provider actually captured, in minor units. Differs from `total`
+  /// whenever a Stripe promotion code was applied, so this — not `total` — is
+  /// the number that belongs on the revenue row.
+  amountPaid Int?
+
+  // ── Google Sheet hand-off ───────────────────────────────────────────────
+  sheetStatus SyncStatus @default(PENDING)
+  sheetError  String?    @db.Text
+  sheetRowAt  DateTime?
+
+  // ── Attribution (from the first-party cookies set in middleware) ────────
+  visitorId String?
+  source    String?
+  medium    String?
+  campaign  String?
+  landing   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events OrderEvent[]
+
+  @@index([status, createdAt])
+  @@index([customerEmail])
+  @@index([providerOrderId])
+  @@index([sheetStatus])
+}
+
+/// Append-only log — makes webhook debugging and refund disputes painless.
+model OrderEvent {
+  id      String   @id @default(cuid())
+  orderId String
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type    String // "created" | "checkout.started" | "payment.succeeded" | ...
+  message String?  @db.Text
+  payload Json?
+  at      DateTime @default(now())
+
+  @@index([orderId, at])
+}
+
+/// Contact-page + custom-quote submissions. Mirrored to the "Contacts" tab.
+model ContactMessage {
+  id          String     @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String
+  message     String     @db.Text
+  sheetStatus SyncStatus @default(PENDING)
+  createdAt   DateTime   @default(now())
+
+  @@index([createdAt])
+}
+
+/// Guarantees a webhook that Stripe/PayPal retries is only processed once.
+model ProcessedWebhook {
+  id        String   @id // provider event id
+  provider  String
+  type      String
+  createdAt DateTime @default(now())
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════
+ * CONTENT — everything the artist edits from /admin
+ * ═══════════════════════════════════════════════════════════════════════════
+ * These tables mirror the constants in src/lib/{packages,portfolio,content}.ts,
+ * which remain in the repo as the seed *defaults*. Run `npm run db:seed` once
+ * to copy them in. Until a table has rows the site falls back to the defaults,
+ * so an un-seeded database renders exactly as before rather than an empty site.
+ * Ids are the human-readable slugs the rest of the app already sends over the
+ * wire ("a4-signature", "rush"). Keeping them stable means historical orders,
+ * Stripe line items and webhooks continue to resolve after an edit.
+ * ═══════════════════════════════════════════════════════════════════════════
+ */
+
+/// Uploaded images, reusable across gallery pieces, packages and pages.
+model MediaAsset {
+  id          String   @id @default(cuid())
+  url         String
+  /// Cloudinary public id (or /uploads path locally) — needed to delete it.
+  pathname    String
+  /// Original filename, shown in the picker.
+  name        String
+  /// Default alt text, copied into whatever slot uses the image.
+  alt         String   @default("")
+  width       Int?
+  height      Int?
+  size        Int      @default(0)
+  contentType String   @default("image/webp")
+  /// Loose grouping for the picker's filter: gallery | carousel | page | package.
+  folder      String   @default("general")
+  createdAt   DateTime @default(now())
+
+  @@index([folder, createdAt])
+}
+
+/// A portrait package. Prices are minor units (cents), as everywhere else.
+model Package {
+  id               String   @id
+  slug             String   @unique
+  name             String
+  size             String
+  sizeShort        String
+  price            Int
+  blurb            String   @db.Text
+  /// string[] — the bullet list on the packages page.
+  includes         Json     @default("[]")
+  subjectsIncluded Int      @default(1)
+  turnaround       String
+  featured         Boolean  @default(false)
+  /// Built-in line drawing used when imageUrl is empty.
+  sketch           Int      @default(1)
+  imageUrl         String?
+  imageAlt         String?
+  active           Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  updatedAt        DateTime @updatedAt
+
+  @@index([active, sortOrder])
+}
+
+/// Optional paid extras (rush, colour, gift wrap…).
+model AddOn {
+  id          String   @id
+  name        String
+  description String   @db.Text
+  price       Int
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+/// Digital / rolled / framed. `requiresAddress` drives the order form.
+model DeliveryOption {
+  id              String   @id
+  name            String
+  description     String   @db.Text
+  price           Int
+  requiresAddress Boolean  @default(false)
+  active          Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  updatedAt       DateTime @updatedAt
+}
+
+/// Medium: graphite / charcoal / colour.
+model StyleOption {
+  id          String   @id
+  name        String
+  description String   @db.Text
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+/// A finished piece shown on /gallery.
+model PortfolioPiece {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  size      String
+  medium    String
+  year      String
+  /// portrait | family | pet | memorial | wedding
+  category  String
+  imageUrl  String?
+  imageAlt  String?
+  sketch    Int      @default(1)
+  caption   String?  @db.Text
+  featured  Boolean  @default(false)
+  published Boolean  @default(true)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@index([published, sortOrder])
+}
+
+/// The four homepage "From the Studio" slides.
+model StudioSlide {
+  id        String   @id
+  label     String
+  blurb     String   @db.Text
+  imageUrl  String?
+  alt       String
+  sketch    Int      @default(1)
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// Client quotes. `placeholder` entries are excluded from review structured
+/// data — inventing reviews breaks Google's policy and consumer law.
+model Testimonial {
+  id          String   @id @default(cuid())
+  quote       String   @db.Text
+  author      String
+  meta        String
+  rating      Int      @default(5)
+  placeholder Boolean  @default(false)
+  published   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+/// Questions on /faq, also emitted as FAQPage JSON-LD.
+model Faq {
+  id        String   @id @default(cuid())
+  question  String   @db.Text
+  answer    String   @db.Text
+  published Boolean  @default(true)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// The five numbered steps on /process and the homepage.
+model ProcessStep {
+  id        String   @id @default(cuid())
+  num       String
+  title     String
+  body      String   @db.Text
+  published Boolean  @default(true)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// Trust badges under the hero.
+model Assurance {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   @db.Text
+  published Boolean  @default(true)
+  sortOrder Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+/// Individual editable strings on otherwise-static pages, keyed by a dotted
+/// path like "about.hero.title". Unset keys fall back to the copy in code.
+model ContentBlock {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+/// Scalar settings: pricing knobs, contact details, social links, SEO copy.
+model SiteSetting {
+  key       String   @id
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}

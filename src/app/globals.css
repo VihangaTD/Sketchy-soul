@@ -1,0 +1,404 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================================================
+   SKETCHY SOUL — DESIGN SYSTEM
+   Every token here comes straight from the approved mobile UI concept.
+   Change a value once, it changes everywhere on the site.
+   =========================================================================== */
+
+@layer base {
+  :root {
+    --black: #0a0a0b;
+    --charcoal: #151517;
+    --card: #1b1b1e;
+    --hairline: rgba(255, 255, 255, 0.08);
+    --gold: #b8935a;
+    --gold-soft: #d9bd8e;
+    --ivory: #f2efea;
+    --grey: #8a8a8f;
+
+    /* Height of the mobile bottom tab bar — pages pad themselves by this. */
+    --tabbar-h: 68px;
+
+    color-scheme: dark;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    /* Anchor links must not slide under the sticky header. */
+    scroll-padding-top: 90px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--black);
+    color: var(--ivory);
+    font-family: var(--font-sans), Manrope, system-ui, sans-serif;
+    /* Manrope holds up at 400 on a dark background where a 300 weight would
+       start to disappear. Lightness comes from colour and spacing instead. */
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    /* Never let a wide element create a horizontal scrollbar on phones. */
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(184, 147, 90, 0.32);
+    color: var(--ivory);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  blockquote {
+    font-family: var(--font-display), Fraunces, Georgia, serif;
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono), ui-monospace, monospace;
+  }
+
+  /* Firefox / WebKit scrollbar treatment inside dark panels. */
+  ::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 99px;
+  }
+
+  /* Respect the visitor's motion preference — required for accessibility. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* ── Layout shell ─────────────────────────────────────────────────────── */
+  .shell {
+    @apply mx-auto w-full max-w-shell px-5 sm:px-8 lg:px-12;
+  }
+
+  .section {
+    @apply py-14 sm:py-20 lg:py-28;
+  }
+
+  /* ── Typography ───────────────────────────────────────────────────────── */
+  .eyebrow {
+    @apply font-sans text-[11px] uppercase text-gold;
+    letter-spacing: 0.25em;
+    font-weight: 500;
+  }
+
+  .divider {
+    @apply mx-auto mb-5 block h-px w-9 bg-gold;
+  }
+
+  /* Fraunces carries more weight per stroke than a transitional serif, so the
+     display sizes sit a step lighter and a touch tighter than the concept. */
+  .display {
+    font-family: var(--font-display), Fraunces, Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(2rem, 1.3rem + 3.2vw, 4.15rem);
+    line-height: 1.06;
+    letter-spacing: -0.015em;
+    color: var(--ivory);
+  }
+
+  .heading {
+    font-family: var(--font-display), Fraunces, Georgia, serif;
+    font-weight: 500;
+    font-size: clamp(1.55rem, 1.2rem + 1.5vw, 2.5rem);
+    line-height: 1.14;
+    letter-spacing: -0.01em;
+    color: var(--ivory);
+  }
+
+  .subheading {
+    font-family: var(--font-display), Fraunces, Georgia, serif;
+    @apply text-[21px] font-medium tracking-[-0.005em] text-ivory sm:text-[23px];
+  }
+
+  .lede {
+    @apply text-[14px] leading-relaxed text-grey sm:text-[15px];
+  }
+
+  .muted {
+    @apply text-[12.5px] leading-relaxed text-grey;
+  }
+
+  .gold-italic {
+    @apply italic;
+    color: var(--gold-soft);
+  }
+
+  /* ── Buttons ──────────────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-[2px] px-8 py-[15px]
+           text-center font-sans text-[13px] font-medium uppercase
+           transition-all duration-300 ease-studio;
+    letter-spacing: 0.12em;
+  }
+
+  .btn-primary {
+    @apply btn bg-gold text-[#141414];
+  }
+  .btn-primary:hover {
+    background: var(--gold-soft);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 30px -12px rgba(184, 147, 90, 0.65);
+  }
+
+  .btn-ghost {
+    @apply btn border border-hairline bg-transparent text-ivory;
+  }
+  .btn-ghost:hover {
+    border-color: rgba(184, 147, 90, 0.55);
+    color: var(--gold-soft);
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    @apply cursor-not-allowed opacity-40;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-sm {
+    @apply px-5 py-3 text-[11px];
+  }
+
+  /* ── The signature artwork frame ──────────────────────────────────────── */
+  /* Paper tooth texture + a gold inner mount line, exactly like the concept. */
+  .frame {
+    @apply relative flex items-center justify-center overflow-hidden rounded-[2px]
+           border border-hairline bg-tooth;
+    background-image:
+      repeating-linear-gradient(
+        115deg,
+        rgba(255, 255, 255, 0.035) 0px,
+        rgba(255, 255, 255, 0.035) 1px,
+        transparent 1px,
+        transparent 3px
+      ),
+      linear-gradient(160deg, #2a2a2d, #131315 70%);
+  }
+
+  .frame::before {
+    content: '';
+    position: absolute;
+    inset: 10px;
+    border: 1px solid rgba(184, 147, 90, 0.35);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* Hovering a mounted piece: it lifts, a warm light comes up behind it, and
+     the artwork itself grows very slightly inside the mount. `.frame` clips,
+     so the drawing zooms without the frame resizing and shifting the grid. */
+  .frame-hover {
+    @apply transition-[transform,box-shadow] duration-500 ease-studio;
+  }
+  .frame-hover img,
+  .frame-hover svg {
+    @apply transition-transform duration-700 ease-studio;
+  }
+  .frame-hover:hover {
+    transform: translateY(-4px);
+    /* Gold rather than a grey drop shadow — grey reads as a UI card, this
+       reads as a picture lit on a wall. */
+    box-shadow: 0 16px 38px -20px rgba(184, 147, 90, 0.55);
+  }
+  .frame-hover:hover img,
+  .frame-hover:hover svg {
+    transform: scale(1.045);
+  }
+  .frame-hover:hover::before {
+    border-color: rgba(184, 147, 90, 0.7);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame-hover,
+    .frame-hover img,
+    .frame-hover svg {
+      transition: none;
+    }
+    .frame-hover:hover,
+    .frame-hover:hover img,
+    .frame-hover:hover svg {
+      transform: none;
+    }
+  }
+
+  /* ── Cards & surfaces ─────────────────────────────────────────────────── */
+  .panel {
+    @apply rounded-[3px] border border-hairline;
+    background: var(--card);
+  }
+
+  .hairline-t {
+    @apply border-t border-hairline;
+  }
+  .hairline-b {
+    @apply border-b border-hairline;
+  }
+
+  /* ── Forms ────────────────────────────────────────────────────────────── */
+  .field-label {
+    @apply mb-2 block font-sans text-[11px] uppercase text-grey;
+    letter-spacing: 0.16em;
+  }
+
+  .field {
+    @apply w-full rounded-[2px] border border-hairline bg-[#121214] px-4 py-3
+           font-sans text-[14px] font-normal text-ivory
+           transition-colors duration-200 placeholder:text-[#5c5c62];
+    /* 16px on mobile stops iOS Safari zooming in when the field is focused. */
+  }
+  @media (max-width: 640px) {
+    .field {
+      font-size: 16px;
+    }
+  }
+
+  .field:focus {
+    @apply border-gold outline-none;
+    box-shadow: 0 0 0 3px rgba(184, 147, 90, 0.12);
+  }
+
+  .field-error {
+    @apply border-[#c2564f];
+  }
+
+  .error-text {
+    @apply mt-1.5 block text-[11.5px] text-[#e08b84];
+  }
+
+  /* Radio / checkbox "selectable card" used all over the order flow. */
+  .choice {
+    @apply relative flex cursor-pointer flex-col rounded-[2px] border border-hairline
+           bg-[#141416] p-4 text-left transition-all duration-200 ease-studio;
+  }
+  .choice:hover {
+    border-color: rgba(184, 147, 90, 0.45);
+  }
+  .choice[data-selected='true'] {
+    border-color: var(--gold);
+    background: rgba(184, 147, 90, 0.07);
+  }
+
+  /* ── Misc UI bits from the concept ────────────────────────────────────── */
+  .price-pill {
+    @apply inline-flex items-center gap-2.5 rounded-full border border-hairline
+           py-2 pl-[18px] pr-2 text-[11px] text-grey;
+    letter-spacing: 0.5px;
+  }
+
+  .stars {
+    @apply text-[13px] text-gold;
+    letter-spacing: 4px;
+  }
+
+  /* Horizontal scroll rail (portfolio strip on mobile). */
+  .rail {
+    @apply flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Bleed a rail to the screen edges while keeping its first item aligned. */
+  .rail-bleed {
+    margin-inline: -1.25rem;
+    padding-inline: 1.25rem;
+  }
+  @media (min-width: 640px) {
+    .rail-bleed {
+      margin-inline: -2rem;
+      padding-inline: 2rem;
+    }
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-[#1a1a1d];
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.05),
+      transparent
+    );
+  }
+}
+
+@layer utilities {
+  .bg-gold-wash {
+    background-image: radial-gradient(
+      120% 90% at 50% -10%,
+      rgba(184, 147, 90, 0.14),
+      transparent 60%
+    );
+  }
+
+  .bg-gold-wash-b {
+    background-image: radial-gradient(
+      100% 100% at 50% 0%,
+      rgba(184, 147, 90, 0.12),
+      transparent 60%
+    );
+  }
+
+  /* Keeps content clear of the fixed mobile tab bar and the iPhone home bar. */
+  .pb-tabbar {
+    padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 768px) {
+    .pb-tabbar {
+      padding-bottom: 0;
+    }
+  }
+
+  .safe-b {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

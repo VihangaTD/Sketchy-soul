@@ -1,0 +1,7 @@
+# Local-development upload folder.
+#
+# When BLOB_READ_WRITE_TOKEN is not set, reference photos are written here so
+# you can build and test the order flow without a cloud account.
+#
+# Everything inside is git-ignored, and this driver is REFUSED in production —
+# see src/lib/storage.ts.
