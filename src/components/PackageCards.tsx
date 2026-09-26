@@ -113,14 +113,15 @@ export function PackageCard({
             Turnaround {pkg.turnaround}
           </p>
 
-          <Link
-            href={`/order?package=${pkg.id}`}
-            className={`${pkg.featured ? 'btn-primary' : 'btn-ghost'} mt-6 w-full`}
-          >
-            Choose {pkg.sizeShort}
-          </Link>
         </>
       ) : null}
+
+      <Link
+        href={`/order?package=${pkg.id}`}
+        className={`${!detailed || pkg.featured ? 'btn-primary' : 'btn-ghost'} mt-4 ${detailed ? '' : 'px-3'}`}
+      >
+        {detailed ? `Choose ${pkg.sizeShort}` : 'Order now'}
+      </Link>
     </article>
   );
 }
