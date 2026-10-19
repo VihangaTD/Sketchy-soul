@@ -8,6 +8,7 @@ import { PurchaseTracking } from '@/components/order/PurchaseTracking';
 import { SketchPortrait } from '@/components/SketchPortrait';
 import { prisma } from '@/lib/prisma';
 import { orderPhotos } from '@/lib/orders';
+import { reconcileStripeOrder } from '@/lib/stripe-orders';
 import { formatMoney } from '@/lib/packages';
 import { COOKIES } from '@/lib/cookies';
 import { site } from '@/lib/site';
@@ -50,9 +51,18 @@ export default async function SuccessPage({
   const requested = params.ref ?? ownedReference;
   const reference = requested && requested === ownedReference ? requested : null;
 
-  const order = reference
+  let order = reference
     ? await prisma.order.findUnique({ where: { reference } }).catch(() => null)
     : null;
+
+  if (order?.provider === 'STRIPE' && order.status === 'AWAITING_PAYMENT') {
+    try {
+      order = await reconcileStripeOrder(order);
+    } catch {
+      // Keep the pending screen available while the webhook retries.
+      console.error('[stripe] Return-page payment verification failed.');
+    }
+  }
 
   const paid = order?.status === 'PAID';
 

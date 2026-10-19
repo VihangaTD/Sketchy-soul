@@ -1,4 +1,5 @@
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/prisma';
@@ -12,6 +13,7 @@ import { isCloudinaryConfigured } from '@/lib/storage';
 import { isCatalogueSeeded } from '@/lib/cms/catalogue';
 import { requireAdmin } from '@/lib/admin/guard';
 import { SectionHead } from '@/components/SectionHead';
+import { reconcileStripeOrder } from '@/lib/stripe-orders';
 
 /**
  * Private order dashboard.
@@ -42,7 +44,34 @@ async function resyncOrder(formData: FormData) {
   revalidatePath('/admin');
 }
 
-export default async function AdminPage() {
+async function checkStripePayment(formData: FormData) {
+  'use server';
+  await requireAdmin();
+  const order = await prisma.order.findUnique({ where: { id: String(formData.get('orderId') ?? '') } });
+  let result = 'unavailable';
+  if (order?.provider === 'STRIPE') {
+    try {
+      const verified = await reconcileStripeOrder(order);
+      result = verified.status === 'PAID' ? 'paid' : 'pending';
+    } catch {
+      console.error('[stripe] Admin payment verification failed.');
+    }
+  }
+  revalidatePath('/admin');
+  redirect(`/admin?paymentCheck=${result}`);
+}
+
+export default async function AdminPage({ searchParams }: {
+  searchParams: Promise<{ paymentCheck?: string }>;
+}) {
+  const { paymentCheck } = await searchParams;
+  const checkMessage = paymentCheck === 'paid'
+    ? 'Stripe confirmed payment. The order is now marked paid.'
+    : paymentCheck === 'pending'
+      ? 'Stripe has not confirmed a completed payment for this order.'
+      : paymentCheck === 'unavailable'
+        ? 'Could not verify payment with Stripe. Check your server configuration and try again.'
+        : null;
   const [orders, counts, failedCount, seeded] = await Promise.all([
     prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
@@ -61,6 +90,7 @@ export default async function AdminPage() {
     counts.find((c) => c.status === status)?._count._all ?? 0;
 
   const warnings = [
+    isStripeConfigured() && !process.env.STRIPE_WEBHOOK_SECRET && 'Stripe webhook secret is missing. Automatic payment confirmations will fail.',
     !isCloudinaryConfigured() && 'Cloudinary is not connected — uploads will fail in production.',
     !isSheetsConfigured() && !isFormConfigured() && 'No Google hand-off configured — paid orders will not reach a sheet.',
     !isStripeConfigured() && !isPayPalConfigured() && 'No payment provider configured — nobody can check out.',
@@ -75,6 +105,7 @@ export default async function AdminPage() {
     <section className="section">
       <div className="shell">
         <SectionHead as="h1" align="left" eyebrow="Studio Only" title="Orders" />
+        {checkMessage ? <p role="status" className="mt-6 text-sm text-gold-soft">{checkMessage}</p> : null}
 
         {warnings.length > 0 ? (
           <ul className="mt-8 space-y-2">
@@ -127,6 +158,12 @@ export default async function AdminPage() {
                     </td>
                     <td className="py-4 pr-4">
                       <StatusPill status={order.status} />
+                      {order.provider === 'STRIPE' && order.status === 'AWAITING_PAYMENT' ? (
+                        <form action={checkStripePayment} className="mt-2">
+                          <input type="hidden" name="orderId" value={order.id} />
+                          <button type="submit" className="text-[11px] text-gold hover:text-gold-soft">Check Stripe payment</button>
+                        </form>
+                      ) : null}
                     </td>
                     <td className="py-4 pr-4 text-[12.5px]">
                       <span className="block text-ivory">{order.customerName}</span>
@@ -137,6 +174,19 @@ export default async function AdminPage() {
                         {order.customerEmail}
                       </a>
                       <span className="mt-0.5 block text-[11px] text-grey/70">{order.country}</span>
+                      <details className="mt-2 max-w-[280px] text-[12px] text-grey">
+                        <summary className="cursor-pointer text-gold">Customer details</summary>
+                        <dl className="mt-2 space-y-2">
+                          <div><dt className="text-ivory">Phone</dt><dd>{order.customerPhone || 'Not provided'}</dd></div>
+                          <div><dt className="text-ivory">Shipping address</dt><dd className="whitespace-pre-line">{[order.addressLine1, order.addressLine2, order.city, order.postalCode].filter(Boolean).length
+                            ? [order.addressLine1, order.addressLine2, order.city, order.postalCode, order.country].filter(Boolean).join('\n')
+                            : order.deliveryType === 'digital' ? 'Not collected for digital delivery.' : 'Not provided'}</dd></div>
+                          <div><dt className="text-ivory">Occasion</dt><dd>{order.occasion || 'Not provided'}</dd></div>
+                          <div><dt className="text-ivory">Deadline</dt><dd>{order.deadline || 'Not provided'}</dd></div>
+                          <div><dt className="text-ivory">Notes</dt><dd className="whitespace-pre-wrap break-words">{order.notes || 'None'}</dd></div>
+                          <div><dt className="text-ivory">Portfolio permission</dt><dd>{order.consented ? 'Yes' : 'No'}</dd></div>
+                        </dl>
+                      </details>
                     </td>
                     <td className="py-4 pr-4 text-[12.5px] text-grey">
                       <span className="block text-ivory">{order.packageName}</span>

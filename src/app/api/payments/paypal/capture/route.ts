@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { markOrderPaid } from '@/lib/orders';
 import { capturePayPalOrder, getPayPalOrder } from '@/lib/paypal';
-import { SITE_URL } from '@/lib/site';
+import { paymentOrigin } from '@/lib/payment-origin';
 
 /**
  * GET /api/payments/paypal/capture — where PayPal sends the customer back.
@@ -18,13 +18,14 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
+  const returnOrigin = paymentOrigin(request);
   const url = new URL(request.url);
   const paypalOrderId = url.searchParams.get('token');
   const reference = url.searchParams.get('ref');
 
   const fail = (why: string) =>
     NextResponse.redirect(
-      `${SITE_URL}/order/cancelled?reason=${encodeURIComponent(why)}${
+      `${returnOrigin}/order/cancelled?reason=${encodeURIComponent(why)}${
         reference ? `&ref=${reference}` : ''
       }`,
       { status: 303 },
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
 
   // Already handled by the webhook that beat us here.
   if (order.status === 'PAID') {
-    return NextResponse.redirect(`${SITE_URL}/order/success?ref=${order.reference}`, {
+    return NextResponse.redirect(`${returnOrigin}/order/success?ref=${order.reference}`, {
       status: 303,
     });
   }
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
       amountPaid,
     });
 
-    return NextResponse.redirect(`${SITE_URL}/order/success?ref=${order.reference}`, {
+    return NextResponse.redirect(`${returnOrigin}/order/success?ref=${order.reference}`, {
       status: 303,
     });
   } catch (error) {

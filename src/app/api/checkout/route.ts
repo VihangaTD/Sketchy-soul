@@ -10,7 +10,7 @@ import { getStripe, isStripeConfigured } from '@/lib/stripe';
 import { createPayPalOrder, approvalLink, isPayPalConfigured } from '@/lib/paypal';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 import { COOKIES, COOKIE_MAX_AGE } from '@/lib/cookies';
-import { SITE_URL } from '@/lib/site';
+import { paymentOrigin } from '@/lib/payment-origin';
 
 /**
  * POST /api/checkout
@@ -22,8 +22,8 @@ import { SITE_URL } from '@/lib/site';
  * 4. Creates a Stripe Checkout session or a PayPal order.
  * 5. Returns the URL to redirect the customer to.
  *
- * The order is only marked PAID by the webhook (see /api/webhooks/*), never
- * here — a customer who closes the tab mid-payment must not get a free
+ * The order is marked PAID only after provider verification (by webhook or
+ * server-side reconciliation), never here — closing the tab must not grant a free
  * portrait, and one who pays must get their order even if their browser dies
  * on the way back.
  */
@@ -32,6 +32,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
+  const returnOrigin = paymentOrigin(request);
   const ip = clientIp(request.headers);
   const limit = rateLimit(`checkout:${ip}`, { limit: 12, windowMs: 10 * 60 * 1000 });
 
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
   // Honeypot: a filled hidden field means a bot. Pretend it worked.
   if (typeof body.company === 'string' && body.company.length > 0) {
-    return NextResponse.json({ url: `${SITE_URL}/order/success` }, { status: 200 });
+    return NextResponse.json({ url: `${returnOrigin}/order/success` }, { status: 200 });
   }
 
   // Loaded here, on the server, from the live price list. The browser sends
@@ -169,8 +170,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const successUrl = `${SITE_URL}/order/success?ref=${order.reference}`;
-  const cancelUrl = `${SITE_URL}/order/cancelled?ref=${order.reference}`;
+  const successUrl = `${returnOrigin}/order/success?ref=${order.reference}`;
+  const cancelUrl = `${returnOrigin}/order/cancelled?ref=${order.reference}`;
 
   /* ── 4. Create the payment ─────────────────────────────────────────────── */
 
@@ -243,7 +244,7 @@ export async function POST(request: Request) {
         itemTotal,
         shipping: priced.shipping,
         total: priced.total,
-        returnUrl: `${SITE_URL}/api/payments/paypal/capture?ref=${order.reference}`,
+        returnUrl: `${returnOrigin}/api/payments/paypal/capture?ref=${order.reference}`,
         cancelUrl,
         customerEmail: input.customerEmail,
       });

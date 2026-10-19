@@ -153,6 +153,42 @@ the photos column of your Google Sheet.
 
 ## 4. Stripe (card payments)
 
+### Sandbox payments on Vercel previews
+
+Sandbox payments should still mark orders PAID. Configure `STRIPE_SECRET_KEY`
+and `STRIPE_WEBHOOK_SECRET` in Vercel's **Preview** environment using the same
+Stripe sandbox. The webhook secret must belong to the deployed endpoint, not
+the local `stripe listen` endpoint. Redeploy after changing variables.
+
+Protected previews can open in your signed-in browser while rejecting Stripe
+with **401 Protected by Vercel Authentication**. In Vercel project Settings >
+Deployment Protection, create a **Protection Bypass for Automation** secret.
+Configure the sandbox's webhook destination as:
+
+```text
+https://YOUR-PREVIEW-HOST/api/webhooks/stripe?x-vercel-protection-bypass=YOUR_BYPASS_SECRET
+```
+
+Keep this token private. It is separate from the Stripe `whsec_...` signing
+secret; Stripe signatures are still required by the application. See
+[Vercel's webhook bypass instructions](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation).
+
+Subscribe to `checkout.session.completed`,
+`checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`,
+and `checkout.session.expired`. Point the destination at the latest deployment
+or a stable branch alias that runs this code and uses the same order database.
+After fixing the destination, resend the failed events in Stripe and verify
+HTTP 200 and PAID in admin. Alternatively, use **Check Stripe payment** for an
+existing pending order; it verifies the saved session with Stripe.
+
+Checkout returns to the current trusted deployment or branch host, preserving
+the customer's order cookie even when `NEXT_PUBLIC_SITE_URL` is a production
+domain. The return page also verifies payment; webhooks remain necessary when
+customers close their browser before returning. The canonical site URL still
+controls SEO and does not need to be changed for every preview.
+
+### Live payments
+
 1. **Activate your account.** Stripe → Settings → Business — live keys do not
    work until this is done.
 2. **Keys**: Developers → API keys. In *live* mode copy:

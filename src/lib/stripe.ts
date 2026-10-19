@@ -39,4 +39,4 @@ export function getStripe(): Stripe {
 
 /** True when the key in use is a test-mode key — surfaced in the admin UI. */
 export const isStripeTestMode = () =>
-  (process.env.STRIPE_SECRET_KEY ?? '').startsWith('sk_test');
+  /^(sk|rk)_test_/.test((process.env.STRIPE_SECRET_KEY ?? '').trim());
