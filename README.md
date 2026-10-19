@@ -6,7 +6,7 @@ tablet and desktop.
 
 Visitors browse the gallery, pick a package, upload the photo they want drawn,
 pay by card or PayPal, and the order lands in the studio's **Google Sheet**
-automatically.
+automatically.test
 
 **Stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS · PostgreSQL via
 Prisma · Stripe + PayPal · Cloudinary · Google Sheets API
