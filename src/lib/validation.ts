@@ -120,14 +120,14 @@ export function buildOrderSchema(catalogue: PricingCatalogue) {
     // Who
     customerName: z.string().trim().min(2, 'Please enter your name').max(120),
     customerEmail: z.string().trim().toLowerCase().email('Enter a valid email address').max(200),
-    customerPhone: z.string().trim().max(40).optional().or(z.literal('')),
+    customerPhone: z.string().trim().min(1, 'Please enter your phone number').max(40),
     country: z.string().trim().min(2, 'Select your country').max(80),
 
-    // Where (only required for physical delivery — enforced in superRefine)
-    addressLine1: z.string().trim().max(160).optional().or(z.literal('')),
+    // Customer address is required for both digital and physical orders.
+    addressLine1: z.string().trim().min(1, 'Please enter your address').max(160),
     addressLine2: z.string().trim().max(160).optional().or(z.literal('')),
-    city: z.string().trim().max(80).optional().or(z.literal('')),
-    postalCode: z.string().trim().max(24).optional().or(z.literal('')),
+    city: z.string().trim().min(1, 'Please enter your city').max(80),
+    postalCode: z.string().trim().min(1, 'Please enter your postal / ZIP code').max(24),
 
     // Brief
     occasion: z.string().trim().max(80).optional().or(z.literal('')),
@@ -151,20 +151,6 @@ export function buildOrderSchema(catalogue: PricingCatalogue) {
 
     // Spam trap — real people never fill a hidden field in.
     company: z.string().max(0).optional(),
-  })
-  .superRefine((data, ctx) => {
-    const delivery = catalogue.deliveryOptions.find((d) => d.id === data.deliveryId);
-    if (!delivery?.requiresAddress) return;
-
-    for (const field of ['addressLine1', 'city', 'postalCode'] as const) {
-      if (!data[field]) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: [field],
-          message: 'Required for shipped orders',
-        });
-      }
-    }
   });
 }
 

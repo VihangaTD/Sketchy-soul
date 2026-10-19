@@ -11,7 +11,6 @@ import { trackEvent } from '../Analytics';
 
 import {
   formatMoney,
-  getDelivery,
   priceOrder,
   type PricingCatalogue,
 } from '@/lib/packages';
@@ -198,8 +197,6 @@ export function OrderWizard({
     }
   }, [catalogue, draft.packageId, draft.addOnIds, draft.style, draft.deliveryId]);
 
-  const needsAddress = Boolean(getDelivery(catalogue, draft.deliveryId)?.requiresAddress);
-
   // The same rules the API applies, so the customer sees errors here first.
   const schema = useMemo(() => buildOrderSchema(catalogue), [catalogue]);
 
@@ -236,11 +233,10 @@ export function OrderWizard({
         next.customerEmail = 'Enter a valid email address.';
       if (!draft.country) next.country = 'Select your country.';
 
-      if (needsAddress) {
-        if (!draft.addressLine1.trim()) next.addressLine1 = 'Required for shipped orders.';
-        if (!draft.city.trim()) next.city = 'Required for shipped orders.';
-        if (!draft.postalCode.trim()) next.postalCode = 'Required for shipped orders.';
-      }
+      if (!draft.customerPhone.trim()) next.customerPhone = 'Please enter your phone number.';
+      if (!draft.addressLine1.trim()) next.addressLine1 = 'Please enter your address.';
+      if (!draft.city.trim()) next.city = 'Please enter your city.';
+      if (!draft.postalCode.trim()) next.postalCode = 'Please enter your postal / ZIP code.';
     }
 
     setErrors(next);
@@ -268,7 +264,6 @@ export function OrderWizard({
   async function submit() {
     const payload = {
       ...draft,
-      customerPhone: draft.customerPhone || undefined,
       consented: draft.consented,
       company: honeypot,
     };
@@ -285,7 +280,7 @@ export function OrderWizard({
       // Jump back to the step that owns the first broken field.
       if (errs.photos) setStep(1);
       else if (
-        ['customerName', 'customerEmail', 'country', 'addressLine1', 'city', 'postalCode'].some(
+        ['customerName', 'customerEmail', 'customerPhone', 'country', 'addressLine1', 'city', 'postalCode'].some(
           (f) => errs[f],
         )
       ) {
@@ -495,8 +490,8 @@ export function OrderWizard({
             <div>
               <h2 className="heading">Where should it go?</h2>
               <p className="lede mt-3 max-w-[52ch]">
-                Your details are used to deliver the portrait and nothing
-                else.
+                Name, email, phone and delivery address are required for all orders,
+                including digital portraits. Digital portraits are delivered by email.
               </p>
             </div>
 
@@ -523,12 +518,12 @@ export function OrderWizard({
                 />
               </Field>
 
-              <Field label="Phone / WhatsApp (optional)" id="customerPhone">
+              <Field label="Phone / WhatsApp" id="customerPhone" error={errors.customerPhone}>
                 <input
                   id="customerPhone"
                   type="tel"
                   inputMode="tel"
-                  className="field"
+                  className={`field ${errors.customerPhone ? 'field-error' : ''}`}
                   value={draft.customerPhone}
                   onChange={(e) => set('customerPhone', e.target.value)}
                   autoComplete="tel"
@@ -555,7 +550,6 @@ export function OrderWizard({
               </Field>
             </div>
 
-            {needsAddress ? (
               <div className="space-y-5 border-t border-hairline pt-6">
                 <p className="eyebrow">Delivery address</p>
 
@@ -601,12 +595,6 @@ export function OrderWizard({
                   </Field>
                 </div>
               </div>
-            ) : (
-              <p className="rounded-[2px] border border-hairline bg-[#141416] px-4 py-3 text-[12px] text-grey">
-                Digital delivery selected — the finished scan is emailed to you,
-                so no postal address is needed.
-              </p>
-            )}
 
             <div className="space-y-5 border-t border-hairline pt-6">
               <p className="eyebrow">About the portrait</p>
@@ -677,17 +665,14 @@ export function OrderWizard({
               />
               <Row label="Name" value={draft.customerName} onEdit={() => goTo(2)} />
               <Row label="Email" value={draft.customerEmail} onEdit={() => goTo(2)} />
-              {needsAddress ? (
+              <Row label="Phone" value={draft.customerPhone} onEdit={() => goTo(2)} />
                 <Row
-                  label="Ship to"
-                  value={[draft.addressLine1, draft.city, draft.postalCode, draft.country]
+                  label="Delivery address"
+                  value={[draft.addressLine1, draft.addressLine2, draft.city, draft.postalCode, draft.country]
                     .filter(Boolean)
                     .join(', ')}
                   onEdit={() => goTo(2)}
                 />
-              ) : (
-                <Row label="Country" value={draft.country} onEdit={() => goTo(2)} />
-              )}
             </div>
 
             <fieldset>
