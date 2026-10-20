@@ -1,9 +1,11 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import Link from 'next/link';
-import { footerLinks, site } from '@/lib/site';
+import { footerLinks } from '@/lib/site';
 import { formatMoney, lowestPrice } from '@/lib/packages';
 import { getCatalogue } from '@/lib/cms/catalogue';
 
 export async function SiteFooter() {
+  const site = await getSiteDetails();
   const year = new Date().getFullYear();
   const catalogue = await getCatalogue();
 

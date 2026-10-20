@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { absoluteImageUrl, absoluteUrl, site, SITE_URL } from './site';
 import { formatMoney, highestPrice, lowestPrice, type PricingCatalogue } from './packages';
 import type { Faq } from './content';
+import type { ContactDetails } from './contact-details';
 
 /**
  * ── SEO TOOLKIT ────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ export function pageMetadata({
 const ORG_ID = `${SITE_URL}/#organization`;
 const SITE_ID = `${SITE_URL}/#website`;
 
-export function organizationSchema(catalogue: PricingCatalogue) {
+export function organizationSchema(catalogue: PricingCatalogue, contact?: ContactDetails) {
   return {
     '@context': 'https://schema.org',
     '@type': ['Organization', 'LocalBusiness'],
@@ -114,8 +115,8 @@ export function organizationSchema(catalogue: PricingCatalogue) {
     name: site.name,
     url: SITE_URL,
     description: site.longDescription,
-    email: site.email,
-    telephone: site.phone,
+    email: contact?.email ?? site.email,
+    telephone: contact?.phone ?? site.phone,
     priceRange: `${formatMoney(lowestPrice(catalogue))}–${formatMoney(highestPrice(catalogue))}`,
     image: absoluteUrl('/opengraph-image'),
     logo: absoluteUrl('/icon.svg'),
@@ -127,7 +128,7 @@ export function organizationSchema(catalogue: PricingCatalogue) {
       ...(site.location.street ? { streetAddress: site.location.street } : {}),
     },
     areaServed: 'Worldwide',
-    sameAs: Object.values(site.social).filter(Boolean),
+    sameAs: Object.values({ ...site.social, ...(contact ? { instagram: contact.instagram, whatsapp: contact.whatsapp } : {}) }).filter(Boolean),
     knowsAbout: [
       'graphite portrait drawing',
       'charcoal portraiture',

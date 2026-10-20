@@ -2,12 +2,14 @@ import { NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
 import { appendContactToSheet } from '@/lib/orders';
-import { contactSchema, fieldErrors } from '@/lib/validation';
+import { CONTACT_SUBJECTS, contactSchema, fieldErrors } from '@/lib/validation';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
+import { getContactDetails } from '@/lib/cms/contact';
+import { sendContactMessage } from '@/lib/email';
 
 /**
  * POST /api/contact — contact form and custom-quote requests.
- * Stored in Postgres, then mirrored to the "Contacts" tab of the studio sheet.
+ * Saved in Postgres, emailed to the saved contact address, and mirrored to Sheets.
  */
 
 export const runtime = 'nodejs';
@@ -53,13 +55,31 @@ export async function POST(request: Request) {
       },
     });
 
-    // The sheet write is best-effort; the message is already safe in Postgres.
-    const sync = await appendContactToSheet(data);
-    if (sync.ok) {
-      await prisma.contactMessage.update({
-        where: { id: saved.id },
-        data: { sheetStatus: 'SYNCED' },
-      });
+    // Sheet availability must not block or determine email delivery.
+    const [delivery, sheet] = await Promise.allSettled([
+      getContactDetails().then(({ email }) => sendContactMessage({
+        ...data,
+        subject: CONTACT_SUBJECTS.find((item) => item.value === data.subject)?.label ?? data.subject,
+      }, email)),
+      (async () => {
+        const sync = await appendContactToSheet(data);
+        if (sync.ok) {
+          await prisma.contactMessage.update({
+            where: { id: saved.id },
+            data: { sheetStatus: 'SYNCED' },
+          });
+        }
+      })(),
+    ]);
+
+    if (sheet.status === 'rejected') console.error('[contact] Sheet backup failed.');
+
+    if (delivery.status === 'rejected' || delivery.value.skipped) {
+      console.error('[contact] Email delivery failed or is not configured.');
+      return NextResponse.json(
+        { error: 'Your message was saved, but email delivery failed. Please email the studio directly.' },
+        { status: delivery.status === 'rejected' ? 502 : 503 },
+      );
     }
 
     return NextResponse.json({ ok: true });

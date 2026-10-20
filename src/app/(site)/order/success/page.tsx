@@ -1,3 +1,4 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import type { Metadata } from 'next';
@@ -11,7 +12,6 @@ import { orderPhotos } from '@/lib/orders';
 import { reconcileStripeOrder } from '@/lib/stripe-orders';
 import { formatMoney } from '@/lib/packages';
 import { COOKIES } from '@/lib/cookies';
-import { site } from '@/lib/site';
 import { pageMetadata } from '@/lib/seo';
 
 /** Never cached and never indexed — it shows one specific customer's order. */
@@ -29,6 +29,7 @@ export default async function SuccessPage({
 }: {
   searchParams: Promise<{ ref?: string }>;
 }) {
+  const site = await getSiteDetails();
   const params = await searchParams;
   const jar = await cookies();
 

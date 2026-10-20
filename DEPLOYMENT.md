@@ -315,13 +315,18 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 > images and — critically — the Stripe/PayPal return URLs. A wrong value here
 > sends paying customers to the wrong domain after checkout.
 
-**Optional email** (leave blank to disable entirely):
+**Email** (required for contact-form email delivery; optional for order notifications):
 
 ```
 RESEND_API_KEY     = re_...
 EMAIL_FROM         = Sketchy Soul <orders@your-domain.com>   ← domain must be verified in Resend
 ADMIN_NOTIFY_EMAIL = you@your-domain.com
 ```
+
+Contact messages are emailed to **Admin → Page Copy → Contact details → Email**.
+`EMAIL_FROM` remains the verified sender; the client's address is used as Reply-To.
+Without `RESEND_API_KEY` and `EMAIL_FROM`, the contact form saves the message but
+reports that email delivery failed. `ADMIN_NOTIFY_EMAIL` only controls order alerts.
 
 ---
 

@@ -1,3 +1,4 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 
@@ -5,7 +6,6 @@ import { SectionHead } from '@/components/SectionHead';
 import { ContactForm } from '@/components/ContactForm';
 import { Block, Line } from '@/components/Skeleton';
 import { JsonLd } from '@/components/JsonLd';
-import { site } from '@/lib/site';
 import { copy, getCopy } from '@/lib/cms/copy';
 import { breadcrumbSchema, pageMetadata } from '@/lib/seo';
 
@@ -21,6 +21,7 @@ export const metadata: Metadata = pageMetadata({
 });
 
 export default async function ContactPage() {
+  const site = await getSiteDetails();
   const blocks = await getCopy();
   const t = (key: string) => copy(blocks, key);
 

@@ -1,10 +1,10 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { SectionHead } from '@/components/SectionHead';
 import { ArtFrame } from '@/components/ArtFrame';
 import { JsonLd } from '@/components/JsonLd';
-import { site } from '@/lib/site';
 import { copy, getCopy } from '@/lib/cms/copy';
 import { gridColumns } from '@/lib/layout';
 import { breadcrumbSchema, pageMetadata } from '@/lib/seo';
@@ -26,6 +26,7 @@ export const metadata: Metadata = pageMetadata({
  * buyer; only the content changes.
  */
 export default async function AboutPage() {
+  const site = await getSiteDetails();
   const blocks = await getCopy();
   const t = (key: string) => copy(blocks, key, { city: site.location.city });
 

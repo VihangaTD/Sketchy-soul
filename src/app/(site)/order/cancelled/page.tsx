@@ -1,8 +1,8 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { SectionHead } from '@/components/SectionHead';
-import { site } from '@/lib/site';
 import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +27,7 @@ export default async function CancelledPage({
 }: {
   searchParams: Promise<{ ref?: string; reason?: string }>;
 }) {
+  const site = await getSiteDetails();
   const params = await searchParams;
   const explanation = params.reason ? REASONS[params.reason] : null;
 

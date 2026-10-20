@@ -6,6 +6,8 @@ import { Analytics } from '@/components/Analytics';
 import { JsonLd } from '@/components/JsonLd';
 import { organizationSchema, websiteSchema } from '@/lib/seo';
 import { getCatalogue } from '@/lib/cms/catalogue';
+import { getContactDetails } from '@/lib/cms/contact';
+import { ContactDetailsProvider } from '@/components/ContactDetailsProvider';
 
 /**
  * Everything the public sees wraps around this layout.
@@ -18,11 +20,11 @@ import { getCatalogue } from '@/lib/cms/catalogue';
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   // Only needed for the priceRange in the LocalBusiness schema, but reading it
   // here keeps every page's structured data honest after a price edit.
-  const catalogue = await getCatalogue();
+  const [catalogue, contactDetails] = await Promise.all([getCatalogue(), getContactDetails()]);
 
   return (
-    <>
-      <JsonLd data={[organizationSchema(catalogue), websiteSchema()]} />
+    <ContactDetailsProvider details={contactDetails}>
+      <JsonLd data={[organizationSchema(catalogue, contactDetails), websiteSchema()]} />
 
       <div className="pb-tabbar flex min-h-dvh flex-col">
         <SiteHeader />
@@ -35,6 +37,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <TabBar />
       <CookieConsent />
       <Analytics />
-    </>
+    </ContactDetailsProvider>
   );
 }

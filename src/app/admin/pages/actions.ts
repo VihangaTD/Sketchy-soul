@@ -4,6 +4,32 @@ import { prisma } from '@/lib/prisma';
 import { CMS_TAGS } from '@/lib/cms/cache';
 import { COPY_GROUPS, copyKeys, defaultCopy } from '@/lib/cms/copy';
 import { flag, publish, requireAdmin, slugify, text } from '@/lib/admin/guard';
+import { contactDetailKeys, contactDetailsSchema, type ContactDetails } from '@/lib/contact-details';
+
+export async function saveContactDetails(
+  _previous: { message: string; errors: Partial<Record<keyof ContactDetails, string>> },
+  formData: FormData,
+) {
+  await requireAdmin();
+  const parsed = contactDetailsSchema.safeParse(Object.fromEntries(
+    Object.keys(contactDetailKeys).map((field) => [field, formData.get(field) ?? '']),
+  ));
+  if (!parsed.success) {
+    const errors: Partial<Record<keyof ContactDetails, string>> = {};
+    for (const issue of parsed.error.issues) errors[issue.path[0] as keyof ContactDetails] = issue.message;
+    return { message: 'Please check the contact details.', errors };
+  }
+  try {
+    await prisma.$transaction(Object.entries(contactDetailKeys).map(([field, key]) => {
+      const value = parsed.data[field as keyof ContactDetails];
+      return prisma.contentBlock.upsert({ where: { key }, create: { key, value }, update: { value } });
+    }));
+  } catch {
+    return { message: 'Could not save contact details. Please try again.', errors: {} };
+  }
+  await publish(CMS_TAGS.blocks);
+  return { message: 'Contact details saved.', errors: {} };
+}
 
 /**
  * Saves one page's worth of copy.

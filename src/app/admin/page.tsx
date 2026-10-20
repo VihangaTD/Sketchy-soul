@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { prisma } from '@/lib/prisma';
-import { isSafePhotoUrl, orderPhotos, syncOrderToSheet } from '@/lib/orders';
+import { isSafePhotoUrl, orderPhotos } from '@/lib/orders';
 import { formatMoney } from '@/lib/packages';
 import { isSheetsConfigured } from '@/lib/google-sheets';
 import { isFormConfigured } from '@/lib/google-form';
@@ -19,8 +19,8 @@ import { reconcileStripeOrder } from '@/lib/stripe-orders';
  * Private order dashboard.
  *
  * The Google Sheet remains your day-to-day workbook — this page exists for the
- * things a sheet cannot do: see orders that never reached the sheet, retry
- * them, and confirm at a glance that the live configuration is correct.
+ * things a sheet cannot do: see orders that never reached the sheet
+ * and confirm at a glance that the live configuration is correct.
  */
 export const dynamic = 'force-dynamic';
 
@@ -28,21 +28,6 @@ export const metadata: Metadata = {
   title: 'Studio Orders',
   robots: { index: false, follow: false },
 };
-
-/** Re-attempts the Google hand-off for one order. */
-async function resyncOrder(formData: FormData) {
-  'use server';
-
-  // Middleware already guards /admin; this is the belt to its braces, because
-  // a server action is a POST endpoint in its own right.
-  await requireAdmin();
-
-  const id = String(formData.get('orderId') ?? '');
-  const order = await prisma.order.findUnique({ where: { id } });
-  if (order) await syncOrderToSheet(order);
-
-  revalidatePath('/admin');
-}
 
 async function checkStripePayment(formData: FormData) {
   'use server';
@@ -96,7 +81,7 @@ export default async function AdminPage({ searchParams }: {
     !isStripeConfigured() && !isPayPalConfigured() && 'No payment provider configured — nobody can check out.',
     isStripeConfigured() && isStripeTestMode() && 'Stripe is in TEST mode — no real money is being taken.',
     isPayPalConfigured() && isPayPalSandbox() && 'PayPal is in SANDBOX mode — no real money is being taken.',
-    failedCount > 0 && `${failedCount} order${failedCount > 1 ? 's' : ''} failed to reach the sheet — retry below.`,
+    failedCount > 0 && `${failedCount} order${failedCount > 1 ? 's' : ''} failed to reach the sheet.`,
     !seeded &&
       'Content tables are empty — the site is rendering the defaults from code. Run `npm run db:seed` once to make packages, gallery and copy editable here.',
   ].filter(Boolean) as string[];
@@ -131,7 +116,7 @@ export default async function AdminPage({ searchParams }: {
           <table className="w-full min-w-[900px] border-collapse text-left">
             <thead>
               <tr className="border-b border-hairline">
-                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos', 'Sheet'].map(
+                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos'].map(
                   (heading) => (
                     <th
                       key={heading}
@@ -239,37 +224,6 @@ export default async function AdminPage({ searchParams }: {
                           )}
                         </div>
                       )}
-                    </td>
-                    <td className="py-4 text-[12px]">
-                      <span
-                        className={
-                          order.sheetStatus === 'SYNCED'
-                            ? 'text-grey'
-                            : order.sheetStatus === 'FAILED'
-                              ? 'text-[#e08b84]'
-                              : 'text-grey/60'
-                        }
-                      >
-                        {order.sheetStatus}
-                      </span>
-
-                      {order.status === 'PAID' && order.sheetStatus !== 'SYNCED' ? (
-                        <form action={resyncOrder} className="mt-1.5">
-                          <input type="hidden" name="orderId" value={order.id} />
-                          <button
-                            type="submit"
-                            className="text-[11px] uppercase tracking-[0.12em] text-gold hover:text-gold-soft"
-                          >
-                            Retry
-                          </button>
-                        </form>
-                      ) : null}
-
-                      {order.sheetError ? (
-                        <p className="mt-1 max-w-[220px] text-[10.5px] leading-snug text-grey/70">
-                          {order.sheetError.slice(0, 140)}
-                        </p>
-                      ) : null}
                     </td>
                   </tr>
                 );

@@ -1,8 +1,9 @@
 'use client';
 
+import { useSiteDetails } from '@/components/ContactDetailsProvider';
+
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { site } from '@/lib/site';
 
 /**
  * Catches any unhandled render error so a visitor never sees a blank page.
@@ -16,6 +17,7 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const site = useSiteDetails();
   useEffect(() => {
     console.error('[app] Unhandled error:', error);
   }, [error]);

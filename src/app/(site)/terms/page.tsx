@@ -1,8 +1,8 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
 import { Clause, LegalPage } from '@/components/LegalPage';
-import { site } from '@/lib/site';
 import { pageMetadata } from '@/lib/seo';
 
 export const revalidate = 86400;
@@ -20,7 +20,8 @@ export const metadata: Metadata = pageMetadata({
  * a small art studio — they are not legal advice. Fill in the placeholders
  * marked [ ] with your registered details.
  */
-export default function TermsPage() {
+export default async function TermsPage() {
+  const site = await getSiteDetails();
   return (
     <LegalPage
       eyebrow="The Fine Print"

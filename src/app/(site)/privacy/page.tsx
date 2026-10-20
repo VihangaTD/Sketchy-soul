@@ -1,8 +1,8 @@
+import { getSiteDetails } from '@/lib/cms/contact';
 import type { Metadata } from 'next';
 
 import { Clause, LegalPage } from '@/components/LegalPage';
 import { COOKIE_REGISTRY } from '@/lib/cookies';
-import { site } from '@/lib/site';
 import { pageMetadata } from '@/lib/seo';
 
 export const revalidate = 86400;
@@ -14,7 +14,8 @@ export const metadata: Metadata = pageMetadata({
   path: '/privacy',
 });
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const site = await getSiteDetails();
   return (
     <LegalPage
       eyebrow="Your Data"

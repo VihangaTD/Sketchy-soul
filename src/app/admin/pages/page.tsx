@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { ContactDetailsForm } from '@/components/admin/ContactDetailsForm';
+import { getContactDetails } from '@/lib/cms/contact';
 
 import { SectionHead } from '@/components/SectionHead';
 import {
@@ -38,10 +40,11 @@ import { deleteSlide, resetCopy, saveCopy, saveSlide } from './actions';
 export const dynamic = 'force-dynamic';
 
 export default async function PagesAdminPage() {
-  const [overrides, media, slides] = await Promise.all([
+  const [overrides, media, slides, contactDetails] = await Promise.all([
     listCopyOverrides(),
     listMedia(),
     listSlidesForAdmin(),
+    getContactDetails(),
   ]);
 
   const assets = media.map((m) => ({
@@ -66,6 +69,7 @@ export default async function PagesAdminPage() {
       />
 
       <nav aria-label="Jump to a page" className="rail rail-bleed mt-8 justify-start gap-2">
+        <a href="#contact-details" className="shrink-0 whitespace-nowrap rounded-full border border-hairline px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] text-grey hover:text-ivory">Contact details</a>
         {COPY_GROUPS.map((group) => (
           <a
             key={group.id}
@@ -78,6 +82,12 @@ export default async function PagesAdminPage() {
       </nav>
 
       <div className="mt-10 space-y-8">
+        <div id="contact-details" className="scroll-mt-24">
+          <Card title="Contact details">
+            <p className="mb-5 text-[12.5px] leading-relaxed text-grey">Public email, phone and social links across the website.</p>
+            <ContactDetailsForm details={contactDetails} />
+          </Card>
+        </div>
         {COPY_GROUPS.map((group) => {
           const edits = changed(group);
 

@@ -4,9 +4,8 @@ import { formatMoney } from './packages';
 /**
  * Transactional email via Resend — entirely optional.
  *
- * Leave RESEND_API_KEY empty and every function here becomes a no-op: no
- * crash, no failed order, just no email. Add the key (resend.com, free tier is
- * 3,000 emails/month) and verify your sending domain to switch it on.
+ * Leave RESEND_API_KEY empty and sends report `skipped`. Orders can proceed
+ * without email; the contact endpoint reports an error when delivery is skipped.
  *
  * ⚠️ DEPLOY: EMAIL_FROM must use a domain you have verified in Resend, or
  * delivery is rejected. ADMIN_NOTIFY_EMAIL is where new-order alerts go.
@@ -111,6 +110,34 @@ export async function sendAdminOrderAlert(order: OrderEmailData & { photos: stri
             `<p style="margin:0 0 4px;font-size:12px"><a href="${escapeHtml(url)}" style="color:#b8935a">Photo ${i + 1}</a></p>`,
         )
         .join('')}
+    `),
+  });
+}
+
+/** Contact enquiries go to the public contact email, with replies to the client. */
+export async function sendContactMessage(message: {
+  name: string;
+  email: string;
+  phone?: string | null;
+  subject: string;
+  message: string;
+}, to: string) {
+  return send({
+    to,
+    replyTo: message.email,
+    subject: `Contact enquiry: ${message.subject}`,
+    html: shell(`
+      <h1 style="margin:0 0 16px;font-size:20px;color:#f2efea">New contact message</h1>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;color:#8a8a8f">
+        <tr><th style="padding:6px 0;text-align:left">Name</th><td>${escapeHtml(message.name)}</td></tr>
+        <tr><th style="padding:6px 0;text-align:left">Email</th><td>${escapeHtml(message.email)}</td></tr>
+        <tr><th style="padding:6px 0;text-align:left">Phone / WhatsApp</th><td>${escapeHtml(message.phone || 'Not provided')}</td></tr>
+        <tr><th style="padding:6px 0;text-align:left">Subject</th><td>${escapeHtml(message.subject)}</td></tr>
+      </table>
+      <div style="margin-top:20px;font-size:14px;line-height:1.7;color:#f2efea;overflow-wrap:anywhere">
+        ${escapeHtml(message.message).replace(/\r\n|\r|\n/g, '<br>')}
+      </div>
+      <p style="margin-top:24px;font-size:12px;color:#8a8a8f">Reply to this email to respond to the client.</p>
     `),
   });
 }

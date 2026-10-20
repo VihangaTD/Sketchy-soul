@@ -1,9 +1,11 @@
 'use client';
 
+import { useSiteDetails } from '@/components/ContactDetailsProvider';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { navLinks, site } from '@/lib/site';
+import { navLinks } from '@/lib/site';
 
 /**
  * Sticky header. On phones it is the mark + the three-line burger from the
@@ -14,6 +16,7 @@ import { navLinks, site } from '@/lib/site';
  * form is reached from there — one journey, not two competing ones.
  */
 export function SiteHeader() {
+  const site = useSiteDetails();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
