@@ -47,7 +47,7 @@ export function PackageCards({
   const columns = columnCount(packages.length);
 
   return (
-    <div className={`grid gap-8 ${gridColumns(packages.length)}`}>
+    <div className={`grid grid-cols-1 gap-x-8 gap-y-12 sm:gap-y-10 ${gridColumns(packages.length)}`}>
       {packages.map((pkg) => (
         <PackageCard key={pkg.id} pkg={pkg} detailed={detailed} columns={columns} />
       ))}
@@ -67,7 +67,7 @@ export function PackageCard({
 }) {
   return (
     <article
-      className={`relative flex flex-col text-center ${
+      className={`relative flex min-w-0 flex-col break-words text-center ${
         pkg.featured ? 'lg:-mt-4' : ''
       }`}
     >
@@ -83,7 +83,7 @@ export function PackageCard({
         sketch={pkg.sketch}
         ratio="aspect-[4/5]"
         sizes={FRAME_SIZES[columns] ?? FRAME_SIZES[4]}
-        className={`mb-4 ${FRAME_WIDTH[columns] ?? ''}`}
+        className={`mb-4 ${detailed ? 'max-sm:mx-auto max-sm:w-full max-sm:max-w-[280px]' : ''} ${FRAME_WIDTH[columns] ?? ''}`}
       />
 
       <p className="mb-2 font-sans text-[11px] uppercase tracking-[0.16em] text-gold">

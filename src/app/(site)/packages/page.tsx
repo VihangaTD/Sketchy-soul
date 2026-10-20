@@ -78,7 +78,7 @@ export default async function PackagesPage() {
       <section className="section hairline-t bg-charcoal">
         <div className="shell">
           <SectionHead eyebrow={t('packages.medium.eyebrow')} title={t('packages.medium.title')} />
-          <div className={`mt-10 grid gap-6 ${gridColumns(catalogue.styles.length, 3)}`}>
+          <div className={`mt-10 grid grid-cols-1 gap-6 ${gridColumns(catalogue.styles.length, 3)}`}>
             {catalogue.styles.map((style) => (
               <div key={style.id} className="panel p-6 text-center">
                 <h3 className="subheading">{style.name}</h3>
@@ -103,8 +103,8 @@ export default async function PackagesPage() {
           <div className="mx-auto mt-10 max-w-3xl">
             <ul className="divide-y divide-[rgba(255,255,255,0.08)] border-y border-hairline">
               {catalogue.addOns.map((addOn) => (
-                <li key={addOn.id} className="flex items-start justify-between gap-6 py-5">
-                  <div>
+                <li key={addOn.id} className="flex items-start justify-between gap-3 py-5 sm:gap-6">
+                  <div className="min-w-0 break-words">
                     <p className="font-sans text-[14px] font-medium text-ivory">{addOn.name}</p>
                     <p className="mt-1 text-[12.5px] leading-relaxed text-grey">
                       {addOn.description}
@@ -115,8 +115,8 @@ export default async function PackagesPage() {
                   </p>
                 </li>
               ))}
-              <li className="flex items-start justify-between gap-6 py-5">
-                <div>
+              <li className="flex items-start justify-between gap-3 py-5 sm:gap-6">
+                <div className="min-w-0 break-words">
                   <p className="font-sans text-[14px] font-medium text-ivory">
                     {t('packages.extras.subjectTitle')}
                   </p>
@@ -137,7 +137,7 @@ export default async function PackagesPage() {
       <section className="section hairline-t bg-charcoal">
         <div className="shell">
           <SectionHead eyebrow={t('packages.delivery.eyebrow')} title={t('packages.delivery.title')} />
-          <div className={`mt-10 grid gap-6 ${gridColumns(catalogue.deliveryOptions.length, 3)}`}>
+          <div className={`mt-10 grid grid-cols-1 gap-6 ${gridColumns(catalogue.deliveryOptions.length, 3)}`}>
             {catalogue.deliveryOptions.map((option) => (
               <div key={option.id} className="panel flex flex-col p-6">
                 <p className="eyebrow mb-2">
@@ -165,7 +165,31 @@ export default async function PackagesPage() {
         <div className="shell">
           <SectionHead eyebrow={t('packages.compare.eyebrow')} title={t('packages.compare.title')} />
 
-          <div className="mt-10 overflow-x-auto">
+          <div className="mt-8 grid grid-cols-1 gap-4 md:hidden">
+            {catalogue.packages.map((pkg) => (
+              <article key={pkg.id} className="panel min-w-0 break-words p-5">
+                <h3 className="subheading">{pkg.name}</h3>
+                <dl className="mt-4 space-y-3 text-[13px]">
+                  {[
+                    ['Size', pkg.size],
+                    ['Subjects', `Up to ${pkg.subjectsIncluded}`],
+                    ['Turnaround', pkg.turnaround],
+                    ['Price', formatMoney(pkg.price)],
+                  ].map(([label, value]) => (
+                    <div key={label} className="grid grid-cols-2 gap-3">
+                      <dt className="text-grey">{label}</dt>
+                      <dd className="text-right text-ivory">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <Link href={`/order?package=${pkg.id}`} className="btn-ghost mt-5 w-full px-3">
+                  Choose {pkg.sizeShort}
+                </Link>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-10 hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px] border-collapse text-left">
               <caption className="sr-only">
                 Portrait package comparison: size, price, subjects and turnaround
