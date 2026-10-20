@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { CMS_TAGS, cmsRead } from './cache';
+import { site } from '@/lib/site';
 
 /**
  * ╔══════════════════════════════════════════════════════════════════════════╗
@@ -289,7 +290,7 @@ export const COPY_GROUPS: CopyGroup[] = [
     id: 'contact',
     title: 'Contact page',
     description:
-      'The email address, phone number and social links themselves live in Settings — this is the wording around them.',
+      'Edit the Studio location, worldwide-orders note and other contact-page wording here. Email, phone and social links are in Contact details above.',
     preview: '/contact',
     fields: [
       { key: 'contact.hero.eyebrow', label: 'Eyebrow', type: 'line', value: 'Say Hello' },
@@ -306,6 +307,13 @@ export const COPY_GROUPS: CopyGroup[] = [
         label: 'Studio block — label',
         type: 'line',
         value: 'Studio',
+      },
+      {
+        key: 'contact.aside.studioLocation',
+        label: 'Studio block — location',
+        hint: 'Location displayed on the contact page, e.g. Colombo, Sri Lanka.',
+        type: 'line',
+        value: `${site.location.city}, ${site.location.countryName}`,
       },
       {
         key: 'contact.aside.studioNote',

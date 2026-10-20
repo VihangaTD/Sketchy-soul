@@ -86,7 +86,7 @@ export default async function ContactPage() {
             <div>
               <p className="eyebrow mb-3">{t('contact.aside.studioLabel')}</p>
               <p className="text-[13px] leading-relaxed text-grey">
-                {site.location.city}, {site.location.countryName}
+                {t('contact.aside.studioLocation')}
                 <br />
                 {t('contact.aside.studioNote')}
               </p>
