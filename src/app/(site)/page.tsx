@@ -237,7 +237,7 @@ export default async function HomePage() {
 
       {/* ══ TESTIMONIAL ═══════════════════════════════════════════════════ */}
       {testimonials.length > 0 ? (
-        <section className="section hairline-t bg-charcoal">
+        <section className="section hairline-t bg-charcoal max-lg:pb-6">
           <div className="shell">
             <Testimonials testimonials={testimonials} />
           </div>
@@ -245,7 +245,7 @@ export default async function HomePage() {
       ) : null}
 
       {/* ══ FOOTER CTA ════════════════════════════════════════════════════ */}
-      <section className="bg-gold-wash-b section text-center">
+      <section className="bg-gold-wash-b section text-center max-lg:pt-8">
         <div className="shell">
           <SectionHead
             eyebrow={t("home.cta.eyebrow")}
