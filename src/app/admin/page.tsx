@@ -153,6 +153,7 @@ export default async function AdminPage({ searchParams }: {
         </div>
         {/* <p className="mt-3 text-xs text-grey">Revenue includes paid orders at the amount captured. Monthly revenue uses the payment date in Sri Lanka time.</p> */}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-4">
+          <Stat label="Total orders" value={String(counts.reduce((total, group) => total + group._count._all, 0))} />
           <Stat label="Paid (shown orders)" value={String(paidOrders.length)} />
           <Stat label="Revenue (shown orders)" value={formatMoney(revenue)} />
           <Stat label="Awaiting payment" value={String(countOf('AWAITING_PAYMENT'))} />
