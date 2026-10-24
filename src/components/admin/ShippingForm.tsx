@@ -10,12 +10,12 @@ export function ShippingForm({ orderId, trackingNumber, sentAt }: {
 }) {
   const [state, action, pending] = useActionState(sendOrderShipment, { message: '', ok: false });
   return (
-    <form action={action} className="min-w-[240px] max-w-[280px] space-y-2">
+    <form action={action} className="w-full min-w-0 max-w-xl space-y-3">
       <input type="hidden" name="orderId" value={orderId} />
       <label className="block text-[11px] text-grey" htmlFor={`tracking-${orderId}`}>Tracking number</label>
       <input id={`tracking-${orderId}`} name="trackingNumber" className="field" required maxLength={120}
         defaultValue={trackingNumber ?? ''} placeholder="Enter tracking number" disabled={pending} />
-      <button type="submit" className="btn-primary btn-sm" disabled={pending}>
+      <button type="submit" className="btn-primary btn-sm w-full !whitespace-normal sm:w-auto disabled:opacity-60" disabled={pending}>
         {pending ? 'Sending…' : 'Save & send shipping email'}
       </button>
       {sentAt ? <p className="text-[11px] text-grey">Email sent: {sentAt.slice(0, 16).replace('T', ' ')} UTC</p> : null}

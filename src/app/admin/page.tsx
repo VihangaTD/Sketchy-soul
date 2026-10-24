@@ -59,13 +59,12 @@ export default async function AdminPage({ searchParams }: {
       : paymentCheck === 'unavailable'
         ? 'Could not verify payment with Stripe. Check your server configuration and try again.'
         : null;
-  const [orders, counts, failedCount, seeded] = await Promise.all([
+  const [orders, counts, seeded] = await Promise.all([
     prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
       take: 50,
     }),
     prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
-    prisma.order.count({ where: { sheetStatus: 'FAILED' } }),
     isCatalogueSeeded().catch(() => true),
   ]);
 
@@ -83,7 +82,6 @@ export default async function AdminPage({ searchParams }: {
     !isStripeConfigured() && !isPayPalConfigured() && 'No payment provider configured — nobody can check out.',
     isStripeConfigured() && isStripeTestMode() && 'Stripe is in TEST mode — no real money is being taken.',
     isPayPalConfigured() && isPayPalSandbox() && 'PayPal is in SANDBOX mode — no real money is being taken.',
-    failedCount > 0 && `${failedCount} order${failedCount > 1 ? 's' : ''} failed to reach the sheet.`,
     !seeded &&
       'Content tables are empty — the site is rendering the defaults from code. Run `npm run db:seed` once to make packages, gallery and copy editable here.',
   ].filter(Boolean) as string[];
@@ -107,43 +105,42 @@ export default async function AdminPage({ searchParams }: {
           </ul>
         ) : null}
 
-        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Stat label="Paid (last 50)" value={String(paidOrders.length)} />
           <Stat label="Revenue (last 50)" value={formatMoney(revenue)} />
           <Stat label="Awaiting payment" value={String(countOf('AWAITING_PAYMENT'))} />
-          <Stat label="Sheet failures" value={String(failedCount)} />
         </div>
 
-        <div className="mt-10 overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-hairline">
-                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos', 'Shipping', 'Digital delivery'].map(
-                  (heading) => (
-                    <th
-                      key={heading}
-                      scope="col"
-                      className="py-3 pr-4 text-[10.5px] uppercase tracking-[0.14em] text-grey"
-                    >
-                      {heading}
-                    </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
+        <div className="mt-10">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-serif text-2xl text-ivory">Recent orders</h2>
+            <p className="text-xs text-grey">Latest {orders.length} orders · Newest first</p>
+          </div>
+          <div className="space-y-3">
               {orders.map((order) => {
                 const photos = orderPhotos(order);
 
                 return (
-                  <tr key={order.id} className="border-b border-hairline align-top">
-                    <td className="py-4 pr-4 text-[12px] text-grey">
+                  <details key={order.id} className="group/order overflow-hidden rounded-lg border border-hairline bg-white/[0.02] open:border-gold/30">
+                    <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-4 transition-colors hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-gold sm:gap-5 sm:px-6 [&::-webkit-details-marker]:hidden">
+                      <span className="shrink-0 font-mono text-xs text-ivory sm:text-sm">{order.reference}</span>
+                      <span className="min-w-0 flex-1 truncate text-sm text-ivory">{order.customerName}</span>
+                      <span className="hidden min-w-0 flex-1 truncate text-xs text-grey lg:block">{order.packageName}</span>
+                      <span className="hidden shrink-0 text-xs capitalize text-grey md:block">{order.deliveryType}</span>
+                      <span className="hidden shrink-0 sm:block"><StatusPill status={order.status} /></span>
+                      <span className="shrink-0 text-sm text-gold-soft">{formatMoney(order.amountPaid ?? order.total)}</span>
+                    </summary>
+                    <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 border-t border-hairline p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-4 [&>div]:min-w-0 [&>div]:break-words">
+                    <div className="text-[12px] text-grey sm:col-span-2 xl:col-span-1">
+                      <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Created · UTC</span>
                       {order.createdAt.toISOString().slice(0, 16).replace('T', ' ')}
-                    </td>
-                    <td className="py-4 pr-4 font-mono text-[12px] text-ivory">
+                    </div>
+                    <div className="font-mono text-sm text-ivory">
+                      <span className="mb-2 block font-sans text-[10px] uppercase tracking-widest text-grey">Order reference</span>
                       {order.reference}
-                    </td>
-                    <td className="py-4 pr-4">
+                    </div>
+                    <div>
+                      <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Payment status</span>
                       <StatusPill status={order.status} />
                       {order.provider === 'STRIPE' && order.status === 'AWAITING_PAYMENT' ? (
                         <form action={checkStripePayment} className="mt-2">
@@ -151,12 +148,13 @@ export default async function AdminPage({ searchParams }: {
                           <button type="submit" className="text-[11px] text-gold hover:text-gold-soft">Check Stripe payment</button>
                         </form>
                       ) : null}
-                    </td>
-                    <td className="py-4 pr-4 text-[12.5px]">
+                    </div>
+                    <div className="text-[12.5px] sm:row-span-2">
+                      <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Customer</span>
                       <span className="block text-ivory">{order.customerName}</span>
                       <a
                         href={`mailto:${order.customerEmail}`}
-                        className="text-grey hover:text-gold-soft"
+                        className="break-all text-gold-soft hover:underline"
                       >
                         {order.customerEmail}
                       </a>
@@ -174,13 +172,15 @@ export default async function AdminPage({ searchParams }: {
                           <div><dt className="text-ivory">Portfolio permission</dt><dd>{order.consented ? 'Yes' : 'No'}</dd></div>
                         </dl>
                       </details>
-                    </td>
-                    <td className="py-4 pr-4 text-[12.5px] text-grey">
+                    </div>
+                    <div className="text-[12.5px] text-grey">
+                      <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Portrait</span>
                       <span className="block text-ivory">{order.packageName}</span>
                       {order.packageSize} · {order.style} · {order.subjects} subj ·{' '}
                       {order.deliveryType}
-                    </td>
-                    <td className="py-4 pr-4 text-[13px] text-gold-soft">
+                    </div>
+                    <div className="text-lg text-gold-soft">
+                      <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Total</span>
                       {formatMoney(order.amountPaid ?? order.total)}
                       {/* A promotion code makes the captured amount differ
                           from the list price — show both so the sheet and the
@@ -193,12 +193,13 @@ export default async function AdminPage({ searchParams }: {
                       <span className="mt-0.5 block text-[10.5px] text-grey">
                         {order.provider ?? '—'}
                       </span>
-                    </td>
-                    <td className="py-4 pr-4 text-[12px]">
+                    </div>
+                    <div className="text-[12px]">
+                      <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Reference photos</span>
                       {photos.length === 0 ? (
                         <span className="text-grey">—</span>
                       ) : (
-                        <div className="flex flex-col gap-0.5">
+                        <div className="flex flex-wrap gap-2">
                           {photos.map((photo, i) =>
                             // Only a URL our own storage could have issued is
                             // turned into something clickable. Anything else is
@@ -210,7 +211,7 @@ export default async function AdminPage({ searchParams }: {
                                 href={photo.url}
                                 target="_blank"
                                 rel="noreferrer noopener"
-                                className="text-gold hover:text-gold-soft"
+                                className="rounded border border-hairline px-3 py-2 text-gold hover:border-gold/50 hover:text-gold-soft"
                               >
                                 Photo {i + 1}
                               </a>
@@ -226,24 +227,22 @@ export default async function AdminPage({ searchParams }: {
                           )}
                         </div>
                       )}
-                    </td>
-                    <td className="py-4 pr-4 text-[12px]">
+                    </div>
+                    <div className="rounded border border-hairline bg-black/20 p-4 text-[12px] sm:col-span-2 xl:col-span-4">
+                      <span className="mb-3 block text-[10px] uppercase tracking-widest text-grey">Delivery · {order.deliveryType}</span>
                       {order.deliveryType === 'rolled' && order.status === 'PAID' ? (
                         <ShippingForm orderId={order.id} trackingNumber={order.trackingNumber}
                           sentAt={order.shipmentEmailSentAt?.toISOString() ?? null} />
-                      ) : <span className="text-grey">{order.deliveryType === 'rolled' ? 'Awaiting payment' : 'Not applicable'}</span>}
-                    </td>
-                    <td className="py-4 pr-4 text-[12px]">
-                      {order.deliveryType === 'digital' && order.status === 'PAID' ? (
+                      ) : order.deliveryType === 'digital' && order.status === 'PAID' ? (
                         <DigitalDeliveryForm orderId={order.id} downloadUrl={order.digitalDownloadUrl}
                           sentAt={order.digitalEmailSentAt?.toISOString() ?? null} />
-                      ) : <span className="text-grey">{order.deliveryType === 'digital' ? 'Awaiting payment' : 'Not applicable'}</span>}
-                    </td>
-                  </tr>
+                      ) : <span className="text-grey">{order.status !== 'PAID' ? 'Delivery controls become available after payment is confirmed.' : 'Contact the customer to arrange framed delivery.'}</span>}
+                    </div>
+                    </div>
+                  </details>
                 );
               })}
-            </tbody>
-          </table>
+          </div>
 
           {orders.length === 0 ? (
             <p className="py-16 text-center text-[13px] text-grey">
