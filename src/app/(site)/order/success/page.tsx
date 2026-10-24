@@ -75,7 +75,7 @@ export default async function SuccessPage({
         <SectionHead
           as="h1"
           eyebrow={paid ? 'Payment Received' : 'Almost There'}
-          title={paid ? 'Your portrait is in the queue.' : 'Thank you'}
+          title={paid ? 'Your order is confirmed.' : 'Thank you'}
         />
 
         {order ? (
@@ -92,9 +92,11 @@ export default async function SuccessPage({
             <p className="lede mx-auto mt-5 max-w-[44ch]">
               {paid ? (
                 <>
-                  A confirmation is on its way to{' '}
-                  <span className="text-ivory">{order.customerEmail}</span>. Your
-                  preview sketch will follow within {site.turnaround.preview}.
+                  Thank you for choosing Sketchy Soul. Your portrait journey
+                  begins here.
+                  <br />
+                  Your reference photo has been received. We’ll carefully review
+                  it before beginning your portrait.
                 </>
               ) : (
                 <>
