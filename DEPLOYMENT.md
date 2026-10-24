@@ -317,6 +317,14 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 **Email** (required for contact-form email delivery; optional for order notifications):
 
+Paid digital orders have a Digital delivery column. Paste an HTTPS portrait link
+with download permissions for the customer, then select **Save & send portrait
+email**. The link is saved for retries and the accepted email timestamp appears
+after sending. A successful notification cannot be repeated for the same link;
+entering a corrected link allows a new notification. Apply the
+`20261025010000_order_digital_delivery` migration with `npm run db:deploy` before
+using this feature. The link opens the hosted file; the email does not attach it.
+
 The Orders dashboard includes a Shipping column for paid rolled orders. Enter the
 tracking number and choose **Save & send shipping email** to notify the customer.
 The number is saved even if email delivery fails, so you can retry. The dashboard

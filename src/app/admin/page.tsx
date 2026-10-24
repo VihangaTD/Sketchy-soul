@@ -15,6 +15,7 @@ import { requireAdmin } from '@/lib/admin/guard';
 import { SectionHead } from '@/components/SectionHead';
 import { reconcileStripeOrder } from '@/lib/stripe-orders';
 import { ShippingForm } from '@/components/admin/ShippingForm';
+import { DigitalDeliveryForm } from '@/components/admin/DigitalDeliveryForm';
 
 /**
  * Private order dashboard.
@@ -117,7 +118,7 @@ export default async function AdminPage({ searchParams }: {
           <table className="w-full min-w-[900px] border-collapse text-left">
             <thead>
               <tr className="border-b border-hairline">
-                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos', 'Shipping'].map(
+                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos', 'Shipping', 'Digital delivery'].map(
                   (heading) => (
                     <th
                       key={heading}
@@ -231,6 +232,12 @@ export default async function AdminPage({ searchParams }: {
                         <ShippingForm orderId={order.id} trackingNumber={order.trackingNumber}
                           sentAt={order.shipmentEmailSentAt?.toISOString() ?? null} />
                       ) : <span className="text-grey">{order.deliveryType === 'rolled' ? 'Awaiting payment' : 'Not applicable'}</span>}
+                    </td>
+                    <td className="py-4 pr-4 text-[12px]">
+                      {order.deliveryType === 'digital' && order.status === 'PAID' ? (
+                        <DigitalDeliveryForm orderId={order.id} downloadUrl={order.digitalDownloadUrl}
+                          sentAt={order.digitalEmailSentAt?.toISOString() ?? null} />
+                      ) : <span className="text-grey">{order.deliveryType === 'digital' ? 'Awaiting payment' : 'Not applicable'}</span>}
                     </td>
                   </tr>
                 );

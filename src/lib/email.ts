@@ -160,7 +160,7 @@ export async function sendShipmentEmail(order: {
       <p style="margin:0 0 12px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#d9bd8e">From our studio to your home</p>
       <h1 style="margin:0 0 20px;font-size:28px;font-weight:500;color:#f2efea">Your portrait is on its way.</h1>
       <p style="font-size:14px;line-height:1.8;color:#c4c0ba">Hi ${escapeHtml(order.customerName.split(' ')[0])},<br>
-        Your portrait has been carefully packed, rolled for protection, and shipped. We can’t wait for it to arrive at its new home.</p>
+        Your portrait has been carefully packed, and shipped. We can’t wait for it to arrive at its new home.</p>
       <div style="margin:28px 0;padding:24px;background:#0a0a0b;border:1px solid #b8935a">
         <p style="margin:0 0 10px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#d9bd8e">Your tracking number</p>
         <p style="margin:0;font-family:monospace;font-size:20px;line-height:1.5;word-break:break-all;color:#f2efea">${escapeHtml(order.trackingNumber)}</p>
@@ -172,6 +172,44 @@ export async function sendShipmentEmail(order: {
       </table>
       <p style="margin:24px 0;font-size:13px;line-height:1.8;color:#c4c0ba">Tracking updates may take a little time to appear after dispatch. If you need help with your delivery, simply reply to this email.</p>
       <p style="margin:0;font-size:14px;line-height:1.8;color:#d9bd8e">Thank you for choosing Sketchy Soul.<br>A little piece of our studio is now on its way to you.</p>
+    `),
+  });
+}
+
+export async function sendDigitalDeliveryEmail(order: {
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  packageName: string;
+  packageSize: string;
+  digitalDownloadUrl: string;
+}, replyTo: string, idempotencyKey: string) {
+  return send({
+    to: order.customerEmail,
+    replyTo,
+    idempotencyKey,
+    subject: `Your portrait is ready — ${order.reference}`,
+    html: shell(`
+      <p style="margin:0 0 12px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#d9bd8e">Made by hand. Ready to treasure.</p>
+      <h1 style="margin:0 0 20px;font-size:28px;font-weight:500;color:#f2efea">Your portrait is ready.</h1>
+      <p style="font-size:14px;line-height:1.8;color:#c4c0ba">Hi ${escapeHtml(order.customerName.split(' ')[0])},<br>
+        Your portrait is complete, and we’re delighted to share it with you. Thank you for trusting Sketchy Soul to turn your special memory into art.</p>
+      <table role="presentation" style="width:100%;margin:28px 0;background:#0a0a0b;border:1px solid #b8935a">
+        <tr><td style="padding:28px 20px;text-align:center">
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.7;color:#f2efea">A portrait to keep, share, and make your own.</p>
+          <a href="${escapeHtml(order.digitalDownloadUrl)}" style="display:inline-block;padding:15px 24px;background:#d9bd8e;color:#151517;font-size:14px;font-weight:bold;text-decoration:none">Download your portrait</a>
+          <p style="margin:18px 0 0;font-size:12px;line-height:1.7;color:#c4c0ba">Open the link and save the original file to your device.</p>
+        </td></tr>
+      </table>
+      <table role="presentation" style="width:100%;font-size:13px;line-height:1.8;color:#c4c0ba">
+        <tr><td>Order reference</td><td style="text-align:right;color:#f2efea">${escapeHtml(order.reference)}</td></tr>
+        <tr><td>Portrait</td><td style="text-align:right;color:#f2efea">${escapeHtml(order.packageName)} · ${escapeHtml(order.packageSize)}</td></tr>
+        <tr><td>Delivery</td><td style="text-align:right;color:#f2efea">Digital download</td></tr>
+      </table>
+      <p style="margin:24px 0;font-size:13px;line-height:1.8;color:#c4c0ba">Having trouble opening your portrait? Reply to this email and we’ll help you access your file.</p>
+      <p style="font-size:12px;line-height:1.7;color:#8a8a8f">If the button doesn’t open, use this link:<br>
+        <a href="${escapeHtml(order.digitalDownloadUrl)}" style="color:#d9bd8e;word-break:break-all">${escapeHtml(order.digitalDownloadUrl)}</a></p>
+      <p style="margin:24px 0 0;font-size:14px;line-height:1.8;color:#d9bd8e">With care,<br>The Sketchy Soul studio</p>
     `),
   });
 }

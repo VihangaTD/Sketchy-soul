@@ -93,6 +93,8 @@ model Order {
 
   trackingNumber String?
   shipmentEmailSentAt DateTime?
+  digitalDownloadUrl String?
+  digitalEmailSentAt DateTime?
 
   // ── Google Sheet hand-off ───────────────────────────────────────────────
   sheetStatus SyncStatus @default(PENDING)
