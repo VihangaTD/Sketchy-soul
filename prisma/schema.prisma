@@ -91,6 +91,9 @@ model Order {
   /// the number that belongs on the revenue row.
   amountPaid Int?
 
+  trackingNumber String?
+  shipmentEmailSentAt DateTime?
+
   // ── Google Sheet hand-off ───────────────────────────────────────────────
   sheetStatus SyncStatus @default(PENDING)
   sheetError  String?    @db.Text

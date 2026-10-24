@@ -317,6 +317,14 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 **Email** (required for contact-form email delivery; optional for order notifications):
 
+The Orders dashboard includes a Shipping column for paid rolled orders. Enter the
+tracking number and choose **Save & send shipping email** to notify the customer.
+The number is saved even if email delivery fails, so you can retry. The dashboard
+shows the email timestamp after Resend accepts the message; this is not proof of
+inbox delivery. The same tracking number cannot be sent again after success.
+Apply database migrations with `npm run db:deploy` before deploying this feature
+(`20261025000000_order_shipping` adds tracking and notification timestamp fields).
+
 ```
 RESEND_API_KEY     = re_...
 EMAIL_FROM         = Sketchy Soul <orders@your-domain.com>   ← domain must be verified in Resend

@@ -14,6 +14,7 @@ import { isCatalogueSeeded } from '@/lib/cms/catalogue';
 import { requireAdmin } from '@/lib/admin/guard';
 import { SectionHead } from '@/components/SectionHead';
 import { reconcileStripeOrder } from '@/lib/stripe-orders';
+import { ShippingForm } from '@/components/admin/ShippingForm';
 
 /**
  * Private order dashboard.
@@ -116,7 +117,7 @@ export default async function AdminPage({ searchParams }: {
           <table className="w-full min-w-[900px] border-collapse text-left">
             <thead>
               <tr className="border-b border-hairline">
-                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos'].map(
+                {['Created', 'Reference', 'Status', 'Customer', 'Package', 'Total', 'Photos', 'Shipping'].map(
                   (heading) => (
                     <th
                       key={heading}
@@ -224,6 +225,12 @@ export default async function AdminPage({ searchParams }: {
                           )}
                         </div>
                       )}
+                    </td>
+                    <td className="py-4 pr-4 text-[12px]">
+                      {order.deliveryType === 'rolled' && order.status === 'PAID' ? (
+                        <ShippingForm orderId={order.id} trackingNumber={order.trackingNumber}
+                          sentAt={order.shipmentEmailSentAt?.toISOString() ?? null} />
+                      ) : <span className="text-grey">{order.deliveryType === 'rolled' ? 'Awaiting payment' : 'Not applicable'}</span>}
                     </td>
                   </tr>
                 );

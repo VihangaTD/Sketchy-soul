@@ -13,7 +13,7 @@ import { formatMoney } from './packages';
 
 const isConfigured = () => Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 
-async function send(payload: { to: string; subject: string; html: string; replyTo?: string }) {
+async function send(payload: { to: string; subject: string; html: string; replyTo?: string; idempotencyKey?: string }) {
   if (!isConfigured()) return { skipped: true as const };
 
   const res = await fetch('https://api.resend.com/emails', {
@@ -21,6 +21,7 @@ async function send(payload: { to: string; subject: string; html: string; replyT
     headers: {
       Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
+      ...(payload.idempotencyKey ? { 'Idempotency-Key': payload.idempotencyKey } : {}),
     },
     body: JSON.stringify({
       from: process.env.EMAIL_FROM,
@@ -138,6 +139,39 @@ export async function sendContactMessage(message: {
         ${escapeHtml(message.message).replace(/\r\n|\r|\n/g, '<br>')}
       </div>
       <p style="margin-top:24px;font-size:12px;color:#8a8a8f">Reply to this email to respond to the client.</p>
+    `),
+  });
+}
+
+export async function sendShipmentEmail(order: {
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  packageName: string;
+  packageSize: string;
+  trackingNumber: string;
+}, replyTo: string, idempotencyKey: string) {
+  return send({
+    to: order.customerEmail,
+    replyTo,
+    idempotencyKey,
+    subject: `Your portrait has shipped — ${order.reference}`,
+    html: shell(`
+      <p style="margin:0 0 12px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#d9bd8e">From our studio to your home</p>
+      <h1 style="margin:0 0 20px;font-size:28px;font-weight:500;color:#f2efea">Your portrait is on its way.</h1>
+      <p style="font-size:14px;line-height:1.8;color:#c4c0ba">Hi ${escapeHtml(order.customerName.split(' ')[0])},<br>
+        Your portrait has been carefully packed, rolled for protection, and shipped. We can’t wait for it to arrive at its new home.</p>
+      <div style="margin:28px 0;padding:24px;background:#0a0a0b;border:1px solid #b8935a">
+        <p style="margin:0 0 10px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#d9bd8e">Your tracking number</p>
+        <p style="margin:0;font-family:monospace;font-size:20px;line-height:1.5;word-break:break-all;color:#f2efea">${escapeHtml(order.trackingNumber)}</p>
+      </div>
+      <table role="presentation" style="width:100%;font-size:13px;line-height:1.8;color:#c4c0ba">
+        <tr><td>Order reference</td><td style="text-align:right;color:#f2efea">${escapeHtml(order.reference)}</td></tr>
+        <tr><td>Portrait</td><td style="text-align:right;color:#f2efea">${escapeHtml(order.packageName)} · ${escapeHtml(order.packageSize)}</td></tr>
+        <tr><td>Delivery</td><td style="text-align:right;color:#f2efea">Shipped rolled</td></tr>
+      </table>
+      <p style="margin:24px 0;font-size:13px;line-height:1.8;color:#c4c0ba">Tracking updates may take a little time to appear after dispatch. If you need help with your delivery, simply reply to this email.</p>
+      <p style="margin:0;font-size:14px;line-height:1.8;color:#d9bd8e">Thank you for choosing Sketchy Soul.<br>A little piece of our studio is now on its way to you.</p>
     `),
   });
 }
