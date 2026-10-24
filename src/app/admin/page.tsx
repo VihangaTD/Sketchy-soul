@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import { OrderStatus, type Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { isSafePhotoUrl, orderPhotos } from '@/lib/orders';
@@ -17,6 +18,7 @@ import { reconcileStripeOrder } from '@/lib/stripe-orders';
 import { ShippingForm } from '@/components/admin/ShippingForm';
 import { DigitalDeliveryForm } from '@/components/admin/DigitalDeliveryForm';
 import { OrderLimitSelect } from '@/components/admin/OrderLimitSelect';
+import { OrderFilters } from '@/components/admin/OrderFilters';
 
 /**
  * Private order dashboard.
@@ -50,9 +52,25 @@ async function checkStripePayment(formData: FormData) {
 }
 
 export default async function AdminPage({ searchParams }: {
-  searchParams: Promise<{ paymentCheck?: string; limit?: string }>;
+  searchParams: Promise<{ paymentCheck?: string; limit?: string; type?: string; payment?: string; delivery?: string }>;
 }) {
-  const { paymentCheck, limit } = await searchParams;
+  const { paymentCheck, limit, type, payment, delivery } = await searchParams;
+  const selectedType = ['rolled', 'digital', 'framed'].includes(type ?? '') ? type! : 'all';
+  const selectedPayment = Object.values(OrderStatus).includes(payment as OrderStatus) ? payment as OrderStatus : 'all';
+  const selectedDelivery = ['pending', 'shipped', 'link_sent'].includes(delivery ?? '') ? delivery! : 'all';
+  const conditions: Prisma.OrderWhereInput[] = [];
+  if (selectedType !== 'all') conditions.push({ deliveryType: selectedType });
+  if (selectedPayment !== 'all') conditions.push({ status: selectedPayment });
+  if (selectedDelivery !== 'all') {
+    conditions.push({ status: 'PAID' });
+    if (selectedDelivery === 'shipped') conditions.push({ deliveryType: 'rolled', shipmentEmailSentAt: { not: null } });
+    else if (selectedDelivery === 'link_sent') conditions.push({ deliveryType: 'digital', digitalEmailSentAt: { not: null } });
+    else conditions.push({ OR: [
+      { deliveryType: 'digital', digitalEmailSentAt: null },
+      { deliveryType: 'rolled', shipmentEmailSentAt: null },
+      { deliveryType: 'framed', shipmentEmailSentAt: null },
+    ] });
+  }
   const requestedLimit = Number(limit);
   const orderLimit = [10, 25, 50, 100].includes(requestedLimit) ? requestedLimit : 50;
   const checkMessage = paymentCheck === 'paid'
@@ -76,6 +94,7 @@ export default async function AdminPage({ searchParams }: {
   }).format(now);
   const [orders, counts, seeded, revenueTotals] = await Promise.all([
     prisma.order.findMany({
+      where: { AND: conditions },
       orderBy: { createdAt: 'desc' },
       take: orderLimit,
     }),
@@ -134,8 +153,8 @@ export default async function AdminPage({ searchParams }: {
         </div>
         <p className="mt-3 text-xs text-grey">Revenue includes paid orders at the amount captured. Monthly revenue uses the payment date in Sri Lanka time.</p>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Stat label={`Paid (last ${orderLimit})`} value={String(paidOrders.length)} />
-          <Stat label={`Revenue (last ${orderLimit})`} value={formatMoney(revenue)} />
+          <Stat label="Paid (shown orders)" value={String(paidOrders.length)} />
+          <Stat label="Revenue (shown orders)" value={formatMoney(revenue)} />
           <Stat label="Awaiting payment" value={String(countOf('AWAITING_PAYMENT'))} />
         </div>
 
@@ -148,6 +167,7 @@ export default async function AdminPage({ searchParams }: {
               <span className="text-xs text-grey">Showing {orders.length} · Newest first</span>
             </div>
           </div>
+          <OrderFilters type={selectedType} payment={selectedPayment} delivery={selectedDelivery} />
           <div className="space-y-3">
               {orders.map((order) => {
                 const photos = orderPhotos(order);
@@ -288,8 +308,7 @@ export default async function AdminPage({ searchParams }: {
 
           {orders.length === 0 ? (
             <p className="py-16 text-center text-[13px] text-grey">
-              No orders yet. Place a test order with a Stripe test card
-              (4242 4242 4242 4242) to check the whole flow end to end.
+              No orders match these filters. Try a different delivery type, payment status, or delivery status.
             </p>
           ) : null}
         </div>
