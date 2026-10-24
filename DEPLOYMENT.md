@@ -320,8 +320,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Paid digital orders have a Digital delivery column. Paste an HTTPS portrait link
 with download permissions for the customer, then select **Save & send portrait
 email**. The link is saved for retries and the accepted email timestamp appears
-after sending. A successful notification cannot be repeated for the same link;
-entering a corrected link allows a new notification. Apply the
+after sending. Use **Resend portrait email** to send the saved link again, or enter a corrected link. Apply the
 `20261025010000_order_digital_delivery` migration with `npm run db:deploy` before
 using this feature. The link opens the hosted file; the email does not attach it.
 
@@ -329,7 +328,7 @@ The Orders dashboard includes a Shipping column for paid rolled orders. Enter th
 tracking number and choose **Save & send shipping email** to notify the customer.
 The number is saved even if email delivery fails, so you can retry. The dashboard
 shows the email timestamp after Resend accepts the message; this is not proof of
-inbox delivery. The same tracking number cannot be sent again after success.
+inbox delivery. Use **Resend shipping email** to send the saved tracking number again.
 Apply database migrations with `npm run db:deploy` before deploying this feature
 (`20261025000000_order_shipping` adds tracking and notification timestamp fields).
 

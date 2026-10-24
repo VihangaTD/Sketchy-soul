@@ -19,13 +19,9 @@ export async function sendOrderShipment(_previous: { message: string; ok: boolea
     if (!order || order.status !== 'PAID' || order.deliveryType !== 'rolled') {
       return { ok: false, message: 'Shipping emails are available for paid rolled orders only.' };
     }
-    if (order.trackingNumber === trackingNumber && order.shipmentEmailSentAt) {
-      return { ok: true, message: 'The shipment email has already been sent for this tracking number.' };
-    }
-    // Save before sending so a failed delivery can be retried without losing the number.
-    await prisma.order.update({ where: { id: order.id }, data: { trackingNumber, shipmentEmailSentAt: null } });
+    await prisma.order.update({ where: { id: order.id }, data: { trackingNumber, shipmentEmailSentAt: order.trackingNumber === trackingNumber ? order.shipmentEmailSentAt : null } });
     const { email } = await getContactDetails();
-    const key = createHash('sha256').update(`${order.id}:${trackingNumber}`).digest('hex');
+    const key = createHash('sha256').update(`${order.id}:${trackingNumber}:${order.shipmentEmailSentAt?.toISOString() ?? "initial"}`).digest('hex');
     const result = await sendShipmentEmail({ ...order, trackingNumber }, email, `shipment-${key}`);
     if (result.skipped) {
       revalidatePath('/admin');

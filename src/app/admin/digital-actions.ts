@@ -24,12 +24,9 @@ export async function sendDigitalOrder(_previous: { message: string; ok: boolean
     if (!order || order.status !== 'PAID' || order.deliveryType !== 'digital') {
       return { ok: false, message: 'Digital delivery emails are available for paid digital orders only.' };
     }
-    if (order.digitalDownloadUrl === digitalDownloadUrl && order.digitalEmailSentAt) {
-      return { ok: true, message: 'The delivery email has already been sent for this link.' };
-    }
-    await prisma.order.update({ where: { id: order.id }, data: { digitalDownloadUrl, digitalEmailSentAt: null } });
+    await prisma.order.update({ where: { id: order.id }, data: { digitalDownloadUrl, digitalEmailSentAt: order.digitalDownloadUrl === digitalDownloadUrl ? order.digitalEmailSentAt : null } });
     const { email } = await getContactDetails();
-    const key = createHash('sha256').update(`${order.id}:${digitalDownloadUrl}`).digest('hex');
+    const key = createHash('sha256').update(`${order.id}:${digitalDownloadUrl}:${order.digitalEmailSentAt?.toISOString() ?? "initial"}`).digest('hex');
     const result = await sendDigitalDeliveryEmail({ ...order, digitalDownloadUrl }, email, `digital-${key}`);
     if (result.skipped) {
       revalidatePath('/admin');

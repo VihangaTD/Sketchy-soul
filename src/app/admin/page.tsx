@@ -151,6 +151,11 @@ export default async function AdminPage({ searchParams }: {
           <div className="space-y-3">
               {orders.map((order) => {
                 const photos = orderPhotos(order);
+                const deliverySent = order.deliveryType === 'digital'
+                  ? Boolean(order.digitalEmailSentAt) : Boolean(order.shipmentEmailSentAt);
+                const deliveryStatus = deliverySent
+                  ? order.deliveryType === 'digital' ? 'Link sent' : 'Shipped'
+                  : order.deliveryType === 'digital' ? 'Awaiting digital delivery' : 'Awaiting shipment';
 
                 return (
                   <details key={order.id} className="group/order overflow-hidden rounded-lg border border-hairline bg-white/[0.02] open:border-gold/30">
@@ -160,6 +165,11 @@ export default async function AdminPage({ searchParams }: {
                       <span className="hidden min-w-0 flex-1 truncate text-xs text-grey lg:block">{order.packageName}</span>
                       <span className="hidden shrink-0 text-xs capitalize text-grey md:block">{order.deliveryType}</span>
                       <span className="hidden shrink-0 sm:block"><StatusPill status={order.status} /></span>
+                      {order.status === 'PAID' ? (
+                        <span title="Delivery status" className={`shrink-0 rounded-full border px-2 py-1 text-[10px] ${deliverySent ? 'border-gold/40 bg-gold/10 text-gold-soft' : 'border-hairline text-grey'}`}>
+                          {deliveryStatus}
+                        </span>
+                      ) : null}
                       <span className="shrink-0 text-sm text-gold-soft">{formatMoney(order.amountPaid ?? order.total)}</span>
                     </summary>
                     <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 border-t border-hairline p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-4 [&>div]:min-w-0 [&>div]:break-words">
