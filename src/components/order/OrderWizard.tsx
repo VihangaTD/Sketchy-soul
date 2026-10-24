@@ -476,7 +476,7 @@ export function OrderWizard({
               <p className="eyebrow mb-3">A quick checklist</p>
               <ul className="space-y-2 text-[12.5px] leading-relaxed text-grey">
                 <li>Daylight beats flash — near a window is ideal.</li>
-                <li>Eyes open, face unobstructed, no sunglasses.</li>
+                <li>Eyes open, face unobstructed.</li>
                 <li>Send the original file rather than a screenshot.</li>
                 <li>Old or damaged photos are welcome — just send what you have.</li>
               </ul>
