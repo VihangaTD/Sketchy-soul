@@ -16,6 +16,7 @@ import { SectionHead } from '@/components/SectionHead';
 import { reconcileStripeOrder } from '@/lib/stripe-orders';
 import { ShippingForm } from '@/components/admin/ShippingForm';
 import { DigitalDeliveryForm } from '@/components/admin/DigitalDeliveryForm';
+import { OrderLimitSelect } from '@/components/admin/OrderLimitSelect';
 
 /**
  * Private order dashboard.
@@ -49,9 +50,11 @@ async function checkStripePayment(formData: FormData) {
 }
 
 export default async function AdminPage({ searchParams }: {
-  searchParams: Promise<{ paymentCheck?: string }>;
+  searchParams: Promise<{ paymentCheck?: string; limit?: string }>;
 }) {
-  const { paymentCheck } = await searchParams;
+  const { paymentCheck, limit } = await searchParams;
+  const requestedLimit = Number(limit);
+  const orderLimit = [10, 25, 50, 100].includes(requestedLimit) ? requestedLimit : 50;
   const checkMessage = paymentCheck === 'paid'
     ? 'Stripe confirmed payment. The order is now marked paid.'
     : paymentCheck === 'pending'
@@ -62,7 +65,7 @@ export default async function AdminPage({ searchParams }: {
   const [orders, counts, seeded] = await Promise.all([
     prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: orderLimit,
     }),
     prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
     isCatalogueSeeded().catch(() => true),
@@ -106,15 +109,19 @@ export default async function AdminPage({ searchParams }: {
         ) : null}
 
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Stat label="Paid (last 50)" value={String(paidOrders.length)} />
-          <Stat label="Revenue (last 50)" value={formatMoney(revenue)} />
+          <Stat label={`Paid (last ${orderLimit})`} value={String(paidOrders.length)} />
+          <Stat label={`Revenue (last ${orderLimit})`} value={formatMoney(revenue)} />
           <Stat label="Awaiting payment" value={String(countOf('AWAITING_PAYMENT'))} />
         </div>
 
         <div className="mt-10">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-serif text-2xl text-ivory">Recent orders</h2>
-            <p className="text-xs text-grey">Latest {orders.length} orders · Newest first</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <label htmlFor="order-limit" className="text-xs text-grey">Show last</label>
+              <OrderLimitSelect limit={orderLimit} />
+              <span className="text-xs text-grey">Showing {orders.length} · Newest first</span>
+            </div>
           </div>
           <div className="space-y-3">
               {orders.map((order) => {
