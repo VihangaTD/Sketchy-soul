@@ -146,13 +146,13 @@ export default async function AdminPage({ searchParams }: {
           </ul>
         ) : null}
 
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-8 sm:grid-cols-3 sm:gap-4">
           <Stat label="All-time revenue" value={formatMoney(Number(revenueTotals[0]?.allTime ?? 0))} />
           <Stat label={`Revenue · ${monthLabel}`} value={formatMoney(Number(revenueTotals[0]?.monthly ?? 0))} />
           <Stat label="All paid orders" value={String(countOf('PAID'))} />
         </div>
-        <p className="mt-3 text-xs text-grey">Revenue includes paid orders at the amount captured. Monthly revenue uses the payment date in Sri Lanka time.</p>
-        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* <p className="mt-3 text-xs text-grey">Revenue includes paid orders at the amount captured. Monthly revenue uses the payment date in Sri Lanka time.</p> */}
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:mt-5 sm:grid-cols-3 sm:gap-4">
           <Stat label="Paid (shown orders)" value={String(paidOrders.length)} />
           <Stat label="Revenue (shown orders)" value={formatMoney(revenue)} />
           <Stat label="Awaiting payment" value={String(countOf('AWAITING_PAYMENT'))} />
@@ -181,16 +181,15 @@ export default async function AdminPage({ searchParams }: {
                   <details key={order.id} className="group/order overflow-hidden rounded-lg border border-hairline bg-white/[0.02] open:border-gold/30">
                     <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-4 transition-colors hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-gold sm:gap-5 sm:px-6 [&::-webkit-details-marker]:hidden">
                       <span className="shrink-0 font-mono text-xs text-ivory sm:text-sm">{order.reference}</span>
-                      <span className="min-w-0 flex-1 truncate text-sm text-ivory">{order.customerName}</span>
                       <span className="hidden min-w-0 flex-1 truncate text-xs text-grey lg:block">{order.packageName}</span>
                       <span className="hidden shrink-0 text-xs capitalize text-grey md:block">{order.deliveryType}</span>
-                      <span className="hidden shrink-0 sm:block"><StatusPill status={order.status} /></span>
+                      <span className="shrink-0"><StatusPill status={order.status} /></span>
                       {order.status === 'PAID' ? (
                         <span title="Delivery status" className={`shrink-0 rounded-full border px-2 py-1 text-[10px] ${deliverySent ? 'border-gold/40 bg-gold/10 text-gold-soft' : 'border-hairline text-grey'}`}>
                           {deliveryStatus}
                         </span>
                       ) : null}
-                      <span className="shrink-0 text-sm text-gold-soft">{formatMoney(order.amountPaid ?? order.total)}</span>
+                      <span className="ml-auto shrink-0 text-right text-sm text-gold-soft">{formatMoney(order.amountPaid ?? order.total)}</span>
                     </summary>
                     <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-5 border-t border-hairline p-5 sm:grid-cols-2 sm:p-6 xl:grid-cols-4 [&>div]:min-w-0 [&>div]:break-words">
                     <div className="text-[12px] text-grey sm:col-span-2 xl:col-span-1">
@@ -319,9 +318,9 @@ export default async function AdminPage({ searchParams }: {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="panel p-5">
-      <p className="text-[10.5px] uppercase tracking-[0.14em] text-grey">{label}</p>
-      <p className="mt-2 font-serif text-[26px] text-ivory">{value}</p>
+    <div className="panel min-w-0 p-3 sm:p-5">
+      <p className="text-[9px] uppercase leading-relaxed tracking-[0.08em] text-grey sm:text-[10.5px] sm:tracking-[0.14em]">{label}</p>
+      <p className="mt-1 break-words font-serif text-xl leading-tight text-ivory sm:mt-2 sm:text-[26px]">{value}</p>
     </div>
   );
 }
