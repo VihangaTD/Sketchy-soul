@@ -62,13 +62,32 @@ export default async function AdminPage({ searchParams }: {
       : paymentCheck === 'unavailable'
         ? 'Could not verify payment with Stripe. Check your server configuration and try again.'
         : null;
-  const [orders, counts, seeded] = await Promise.all([
+  const now = new Date();
+  const localDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Colombo', year: 'numeric', month: '2-digit',
+  }).formatToParts(now);
+  const year = Number(localDate.find((part) => part.type === 'year')!.value);
+  const month = Number(localDate.find((part) => part.type === 'month')!.value);
+  // Sri Lanka uses UTC+05:30 throughout the year.
+  const monthStart = new Date(Date.UTC(year, month - 1, 1) - 330 * 60_000);
+  const nextMonthStart = new Date(Date.UTC(year, month, 1) - 330 * 60_000);
+  const monthLabel = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Colombo', month: 'long', year: 'numeric',
+  }).format(now);
+  const [orders, counts, seeded, revenueTotals] = await Promise.all([
     prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
       take: orderLimit,
     }),
     prisma.order.groupBy({ by: ['status'], _count: { _all: true } }),
     isCatalogueSeeded().catch(() => true),
+    prisma.$queryRaw<{ allTime: bigint; monthly: bigint }[]>`
+      SELECT
+        COALESCE(SUM(COALESCE("amountPaid", "total")), 0)::bigint AS "allTime",
+        COALESCE(SUM(CASE WHEN "paidAt" >= ${monthStart} AND "paidAt" < ${nextMonthStart}
+          THEN COALESCE("amountPaid", "total") ELSE 0 END), 0)::bigint AS "monthly"
+      FROM "Order" WHERE "status" = 'PAID'
+    `,
   ]);
 
   const paidOrders = orders.filter((o) => o.status === 'PAID');
@@ -109,6 +128,12 @@ export default async function AdminPage({ searchParams }: {
         ) : null}
 
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Stat label="All-time revenue" value={formatMoney(Number(revenueTotals[0]?.allTime ?? 0))} />
+          <Stat label={`Revenue · ${monthLabel}`} value={formatMoney(Number(revenueTotals[0]?.monthly ?? 0))} />
+          <Stat label="All paid orders" value={String(countOf('PAID'))} />
+        </div>
+        <p className="mt-3 text-xs text-grey">Revenue includes paid orders at the amount captured. Monthly revenue uses the payment date in Sri Lanka time.</p>
+        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Stat label={`Paid (last ${orderLimit})`} value={String(paidOrders.length)} />
           <Stat label={`Revenue (last ${orderLimit})`} value={formatMoney(revenue)} />
           <Stat label="Awaiting payment" value={String(countOf('AWAITING_PAYMENT'))} />
