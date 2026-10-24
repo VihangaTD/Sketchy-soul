@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.3.1",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^0.27.1",
     "google-auth-library": "^9.15.1",
     "next": "15.5.22",

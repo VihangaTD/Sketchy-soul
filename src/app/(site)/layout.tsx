@@ -3,6 +3,7 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { TabBar } from '@/components/TabBar';
 import { CookieConsent } from '@/components/CookieConsent';
 import { Analytics } from '@/components/Analytics';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/next';
 import { JsonLd } from '@/components/JsonLd';
 import { organizationSchema, websiteSchema } from '@/lib/seo';
 import { getCatalogue } from '@/lib/cms/catalogue';
@@ -37,6 +38,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <TabBar />
       <CookieConsent />
       <Analytics />
+      <VercelAnalytics />
     </ContactDetailsProvider>
   );
 }
