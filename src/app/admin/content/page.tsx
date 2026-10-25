@@ -63,6 +63,9 @@ export default async function ContentAdminPage() {
 
       {/* ══ Testimonials ═══════════════════════════════════════════════════ */}
       <h2 className="mt-12 font-serif text-[24px] text-ivory">Client quotes</h2>
+      <p className="mt-2 text-sm text-gold-soft">
+        {testimonials.filter((item) => item.orderReference && !item.published).length} customer reviews awaiting approval. Review the quote and enable Published to display it on the homepage.
+      </p>
       <p className="mt-2 max-w-[62ch] text-[12.5px] leading-relaxed text-grey">
         One is shown on a phone, three across on desktop — so put your strongest
         quote first.
@@ -77,6 +80,7 @@ export default async function ContentAdminPage() {
               meta={`${'★'.repeat(t.rating)}${t.placeholder ? ' · placeholder' : ''}`}
               muted={!t.published}
             >
+              {t.orderReference ? <p className="mb-4 text-xs text-gold-soft">Customer submission · {t.orderReference}{!t.published ? ' · Awaiting approval' : ''}</p> : null}
               <Field label="Quote">
                 <Area name="quote" defaultValue={t.quote} rows={3} maxLength={600} />
               </Field>

@@ -115,6 +115,7 @@ export const footerLinks = {
     // to the form — which opens on its own size chooser.
     { href: '/packages', label: 'Packages & Pricing' },
     { href: '/order', label: 'Choose a Package' },
+    { href: '/review', label: 'Add a Review' },
     { href: '/contact?subject=custom-quote', label: 'Request a Custom Quote' },
   ],
   legal: [

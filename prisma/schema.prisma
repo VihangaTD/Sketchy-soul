@@ -286,6 +286,7 @@ model StudioSlide {
 /// data — inventing reviews breaks Google's policy and consumer law.
 model Testimonial {
   id          String   @id @default(cuid())
+  orderReference String? @unique
   quote       String   @db.Text
   author      String
   meta        String

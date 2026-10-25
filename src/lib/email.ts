@@ -143,6 +143,16 @@ export async function sendContactMessage(message: {
   });
 }
 
+function reviewInvitation(reference: string) {
+  const url = escapeHtml(absoluteUrl(`/review?ref=${encodeURIComponent(reference)}`));
+  return `<div style="margin-top:28px;padding-top:24px;border-top:1px solid #303033">
+    <h2 style="margin:0 0 10px;font-size:20px;font-weight:500;color:#f2efea">How did we do?</h2>
+    <p style="margin:0 0 18px;font-size:13px;line-height:1.8;color:#c4c0ba">Once you’ve had a chance to enjoy your portrait, we’d love to hear your thoughts. Your order reference is already filled in.</p>
+    <a href="${url}" style="display:inline-block;padding:12px 22px;border:1px solid #b8935a;color:#d9bd8e;font-size:13px;text-decoration:none">Add your review</a>
+    <p style="margin:14px 0 0;font-size:11px;line-height:1.7;color:#8a8a8f">Or open: <a href="${url}" style="color:#d9bd8e;word-break:break-all">${url}</a></p>
+  </div>`;
+}
+
 export async function sendShipmentEmail(order: {
   reference: string;
   customerName: string;
@@ -182,6 +192,7 @@ export async function sendShipmentEmail(order: {
       </table>` : ''}
       <p style="margin:24px 0;font-size:13px;line-height:1.8;color:#c4c0ba">Tracking updates may take a little time to appear after dispatch. If you need help with your delivery, simply reply to this email.</p>
       <p style="margin:0;font-size:14px;line-height:1.8;color:#d9bd8e">Thank you for choosing Sketchy Soul.<br>A little piece of our studio is now on its way to you.</p>
+      ${reviewInvitation(order.reference)}
     `),
   });
 }
@@ -220,6 +231,7 @@ export async function sendDigitalDeliveryEmail(order: {
       <p style="font-size:12px;line-height:1.7;color:#8a8a8f">If the button doesn’t open, use this link:<br>
         <a href="${escapeHtml(order.digitalDownloadUrl)}" style="color:#d9bd8e;word-break:break-all">${escapeHtml(order.digitalDownloadUrl)}</a></p>
       <p style="margin:24px 0 0;font-size:14px;line-height:1.8;color:#d9bd8e">With care,<br>The Sketchy Soul studio</p>
+      ${reviewInvitation(order.reference)}
     `),
   });
 }

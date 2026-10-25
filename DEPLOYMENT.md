@@ -317,6 +317,14 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 **Email** (required for contact-form email delivery; optional for order notifications):
 
+Customer reviews: the footer's **Add a Review** link opens `/review`. Both shipping
+and digital-delivery emails include `/review?ref=<order-reference>` to prefill the
+reference. Submissions require a valid paid-order reference, name, rating, review,
+and publication consent. One submission is allowed per order. Reviews remain
+unpublished until approved under **Admin → Words → Client quotes**. A reference
+alone does not prove who submitted a review; inspect submissions before publishing.
+Apply migration `20261025020000_customer_reviews` with `npm run db:deploy`.
+
 For original photos in Google Drive plus compressed copies in Cloudinary, follow
 [Google Drive setup](docs/google-drive-uploads.md). Once connected, originals are
 filed under `Customer Uploaded Photos/<order reference>` during checkout. Until
