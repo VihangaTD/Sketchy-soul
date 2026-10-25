@@ -293,7 +293,7 @@ export default async function AdminPage({ searchParams }: {
                     <div className="rounded border border-hairline bg-black/20 p-4 text-[12px] sm:col-span-2 xl:col-span-4">
                       <span className="mb-3 block text-[10px] uppercase tracking-widest text-grey">Delivery · {order.deliveryType}</span>
                       {order.deliveryType === 'rolled' && order.status === 'PAID' ? (
-                        <ShippingForm orderId={order.id} trackingNumber={order.trackingNumber}
+                        <ShippingForm orderId={order.id} trackingNumber={order.trackingNumber} downloadUrl={order.digitalDownloadUrl}
                           sentAt={order.shipmentEmailSentAt?.toISOString() ?? null} />
                       ) : order.deliveryType === 'digital' && order.status === 'PAID' ? (
                         <DigitalDeliveryForm orderId={order.id} downloadUrl={order.digitalDownloadUrl}

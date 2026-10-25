@@ -150,6 +150,7 @@ export async function sendShipmentEmail(order: {
   packageName: string;
   packageSize: string;
   trackingNumber: string;
+  digitalDownloadUrl?: string | null;
 }, replyTo: string, idempotencyKey: string) {
   return send({
     to: order.customerEmail,
@@ -168,8 +169,17 @@ export async function sendShipmentEmail(order: {
       <table role="presentation" style="width:100%;font-size:13px;line-height:1.8;color:#c4c0ba">
         <tr><td>Order reference</td><td style="text-align:right;color:#f2efea">${escapeHtml(order.reference)}</td></tr>
         <tr><td>Portrait</td><td style="text-align:right;color:#f2efea">${escapeHtml(order.packageName)} · ${escapeHtml(order.packageSize)}</td></tr>
-        <tr><td>Delivery</td><td style="text-align:right;color:#f2efea">Shipped rolled</td></tr>
+        <tr><td>Delivery</td><td style="text-align:right;color:#f2efea">Shipped</td></tr>
       </table>
+      ${order.digitalDownloadUrl ? `
+      <table role="presentation" style="width:100%;margin:24px 0;border:1px solid #b8935a;background:#0a0a0b">
+        <tr><td style="padding:24px;text-align:center">
+          <h2 style="margin:0 0 12px;font-size:20px;font-weight:500;color:#f2efea">Your digital copy is ready, too.</h2>
+          <p style="margin:0 0 20px;font-size:13px;line-height:1.8;color:#c4c0ba">Enjoy your portrait while your original makes its way to you. Open the link below and save your digital copy.</p>
+          <a href="${escapeHtml(order.digitalDownloadUrl)}" style="display:inline-block;padding:14px 22px;background:#d9bd8e;color:#151517;font-size:14px;font-weight:bold;text-decoration:none">Download your digital copy</a>
+          <p style="margin:16px 0 0;font-size:12px;line-height:1.7;color:#8a8a8f">If the button does not open, use this link:<br><a href="${escapeHtml(order.digitalDownloadUrl)}" style="color:#d9bd8e;word-break:break-all">${escapeHtml(order.digitalDownloadUrl)}</a></p>
+        </td></tr>
+      </table>` : ''}
       <p style="margin:24px 0;font-size:13px;line-height:1.8;color:#c4c0ba">Tracking updates may take a little time to appear after dispatch. If you need help with your delivery, simply reply to this email.</p>
       <p style="margin:0;font-size:14px;line-height:1.8;color:#d9bd8e">Thank you for choosing Sketchy Soul.<br>A little piece of our studio is now on its way to you.</p>
     `),
