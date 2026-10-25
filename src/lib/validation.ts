@@ -123,11 +123,11 @@ export function buildOrderSchema(catalogue: PricingCatalogue) {
     customerPhone: z.string().trim().min(1, 'Please enter your phone number').max(40),
     country: z.string().trim().min(2, 'Select your country').max(80),
 
-    // Customer address is required for both digital and physical orders.
-    addressLine1: z.string().trim().min(1, 'Please enter your address').max(160),
+    // Only physical orders require a delivery address.
+    addressLine1: z.string().trim().max(160).default(''),
     addressLine2: z.string().trim().max(160).optional().or(z.literal('')),
-    city: z.string().trim().min(1, 'Please enter your city').max(80),
-    postalCode: z.string().trim().min(1, 'Please enter your postal / ZIP code').max(24),
+    city: z.string().trim().max(80).default(''),
+    postalCode: z.string().trim().max(24).default(''),
 
     // Brief
     occasion: z.string().trim().max(80).optional().or(z.literal('')),
@@ -151,7 +151,18 @@ export function buildOrderSchema(catalogue: PricingCatalogue) {
 
     // Spam trap — real people never fill a hidden field in.
     company: z.string().max(0).optional(),
-  });
+  }).superRefine((order, ctx) => {
+    if (order.deliveryId === 'digital') return;
+    for (const [field, message] of [
+      ['addressLine1', 'Please enter your address'],
+      ['city', 'Please enter your city'],
+      ['postalCode', 'Please enter your postal / ZIP code'],
+    ] as const) {
+      if (!order[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
+    }
+  }).transform((order) => order.deliveryId === 'digital'
+    ? { ...order, addressLine1: '', addressLine2: '', city: '', postalCode: '' }
+    : order);
 }
 
 export type OrderSchema = ReturnType<typeof buildOrderSchema>;

@@ -234,9 +234,11 @@ export function OrderWizard({
       if (!draft.country) next.country = 'Select your country.';
 
       if (!draft.customerPhone.trim()) next.customerPhone = 'Please enter your phone number.';
+      if (draft.deliveryId !== 'digital') {
       if (!draft.addressLine1.trim()) next.addressLine1 = 'Please enter your address.';
       if (!draft.city.trim()) next.city = 'Please enter your city.';
       if (!draft.postalCode.trim()) next.postalCode = 'Please enter your postal / ZIP code.';
+      }
     }
 
     setErrors(next);
@@ -490,8 +492,9 @@ export function OrderWizard({
             <div>
               <h2 className="heading">Where should it go?</h2>
               <p className="lede mt-3 max-w-[52ch]">
-                Name, email, phone and delivery address are required for all orders,
-                including digital portraits. Digital portraits are delivered by email.
+                {draft.deliveryId === 'digital'
+                  ? 'Enter your name, email and phone number. Your digital portrait will be delivered by email.'
+                  : 'Enter your contact details and delivery address for your portrait.'}
               </p>
             </div>
 
@@ -521,6 +524,8 @@ export function OrderWizard({
               <Field label="Phone / WhatsApp" id="customerPhone" error={errors.customerPhone}>
                 <input
                   id="customerPhone"
+                  required
+                  maxLength={40}
                   type="tel"
                   inputMode="tel"
                   className={`field ${errors.customerPhone ? 'field-error' : ''}`}
@@ -550,7 +555,7 @@ export function OrderWizard({
               </Field>
             </div>
 
-              <div className="space-y-5 border-t border-hairline pt-6">
+              {draft.deliveryId !== 'digital' ? <div className="space-y-5 border-t border-hairline pt-6">
                 <p className="eyebrow">Delivery address</p>
 
                 <Field label="Address line 1" id="addressLine1" error={errors.addressLine1}>
@@ -594,7 +599,7 @@ export function OrderWizard({
                     />
                   </Field>
                 </div>
-              </div>
+              </div> : null}
 
             <div className="space-y-5 border-t border-hairline pt-6">
               <p className="eyebrow">About the portrait</p>
@@ -666,13 +671,13 @@ export function OrderWizard({
               <Row label="Name" value={draft.customerName} onEdit={() => goTo(2)} />
               <Row label="Email" value={draft.customerEmail} onEdit={() => goTo(2)} />
               <Row label="Phone" value={draft.customerPhone} onEdit={() => goTo(2)} />
-                <Row
+                {draft.deliveryId !== 'digital' ? <Row
                   label="Delivery address"
                   value={[draft.addressLine1, draft.addressLine2, draft.city, draft.postalCode, draft.country]
                     .filter(Boolean)
                     .join(', ')}
                   onEdit={() => goTo(2)}
-                />
+                /> : null}
             </div>
 
             <fieldset>
