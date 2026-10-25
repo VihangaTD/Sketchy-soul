@@ -203,7 +203,7 @@ export function PhotoUploader({ photos, onChange, error, driveRequired }: Props)
         <p className="mt-3 text-[11px] leading-relaxed text-grey/80">
           Up to {MAX_PHOTOS} images · JPEG, PNG, WebP or HEIC
           <br />
-          Up to 10 MB per photo. Your original photo is preserved for the artist.
+          Up to 10 MB per photo. Your photo is preserved for the artist.
         </p>
 
       </div>
