@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
-import { humanFileSize } from '@/lib/image-resize';
 import { ACCEPTED_IMAGE_TYPES, MAX_PHOTOS, MAX_PHOTO_BYTES, type UploadedPhoto } from '@/lib/validation';
 import { sniffImageType, matchesClaim } from '@/lib/image-signature';
 
@@ -253,7 +252,7 @@ export function PhotoUploader({ photos, onChange, error, driveRequired }: Props)
                 ×
               </button>
               <p className="mt-1.5 truncate text-[10.5px] text-grey" title={photo.name}>
-                {photo.name} · {humanFileSize(photo.size)}
+                {photo.name}
               </p>
               {driveRequired && (!photo.originalDriveId || !photo.originalDriveReceipt) ? (
                 <div className="mt-2 space-y-2">
