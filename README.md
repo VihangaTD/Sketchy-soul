@@ -189,7 +189,7 @@ Customer                    This app                        Elsewhere
 picks a package
 uploads a photo   ────────► POST /api/upload      ────────► Cloudinary
                             (only the URL is kept)
-                            (resized in-browser first)
+                            (original file, no resizing or compression)
 fills the form
 presses Pay       ────────► POST /api/checkout
                             • re-prices from the catalog

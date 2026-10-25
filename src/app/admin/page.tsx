@@ -258,6 +258,13 @@ export default async function AdminPage({ searchParams }: {
                     </div>
                     <div className="text-[12px]">
                       <span className="mb-2 block text-[10px] uppercase tracking-widest text-grey">Reference photos</span>
+                      {photos.some((photo) => photo.originalDriveId) ? (
+                        <div className="mb-3 flex flex-wrap gap-2">
+                          {photos.map((photo, index) => photo.originalDriveId && /^[\w-]{1,200}$/.test(photo.originalDriveId) ? (
+                            <a key={photo.originalDriveId} href={`https://drive.google.com/file/d/${photo.originalDriveId}/view`} target="_blank" rel="noreferrer noopener" className="rounded border border-gold/40 px-3 py-2 text-xs text-gold-soft hover:bg-gold/10">Original {index + 1} · Drive</a>
+                          ) : null)}
+                        </div>
+                      ) : null}
                       {photos.length === 0 ? (
                         <span className="text-grey">—</span>
                       ) : (

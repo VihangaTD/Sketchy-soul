@@ -80,6 +80,8 @@ export const uploadedPhotoSchema = z.object({
   name: z.string().max(255),
   size: z.number().int().nonnegative().max(MAX_PHOTO_BYTES),
   contentType: z.string().max(128),
+  originalDriveId: z.string().regex(/^[\w-]{1,200}$/).optional(),
+  originalDriveReceipt: z.string().max(2048).optional(),
 });
 
 export type UploadedPhoto = z.infer<typeof uploadedPhotoSchema>;

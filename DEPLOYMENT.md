@@ -317,6 +317,19 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 **Email** (required for contact-form email delivery; optional for order notifications):
 
+For original photos in Google Drive plus compressed copies in Cloudinary, follow
+[Google Drive setup](docs/google-drive-uploads.md). Once connected, originals are
+filed under `Customer Uploaded Photos/<order reference>` during checkout. Until
+Drive is configured, the Cloudinary-only flow below remains active.
+
+Customer reference photos upload directly from the browser to Cloudinary using
+server-generated signatures from `/api/upload/sign`. Original file bytes are sent
+without compression or resizing, bypassing Vercel's function body-size limit.
+The configured Cloudinary Free account was checked on 25 October 2026: 10 MiB per
+image and 25 megapixels. Larger files require a higher Cloudinary account limit;
+update `MAX_PHOTO_BYTES` if that limit changes. The local fallback `/api/upload`
+also preserves originals, but production customers use the direct upload flow.
+
 Paid digital orders have a Digital delivery column. Paste an HTTPS portrait link
 with download permissions for the customer, then select **Save & send portrait
 email**. The link is saved for retries and the accepted email timestamp appears

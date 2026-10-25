@@ -98,6 +98,7 @@ export function OrderWizard({
   catalogue,
   initialPackageId,
   stripeEnabled,
+  driveRequired,
 }: {
   /** The live price list, loaded on the server so the running total here
       matches the amount /api/checkout will recompute and charge. */
@@ -105,6 +106,7 @@ export function OrderWizard({
   initialPackageId: string;
   stripeEnabled: boolean;
   paypalEnabled: boolean;
+  driveRequired: boolean;
 }) {
   // Temporarily disabled in checkout. Restore the prop above to enable PayPal.
   const paypalEnabled = false;
@@ -227,6 +229,9 @@ export function OrderWizard({
     if (index === 1 && draft.photos.length === 0) {
       next.photos = 'Please upload at least one reference photo.';
     }
+    if (index === 1 && driveRequired && draft.photos.some((photo) => !photo.originalDriveId || !photo.originalDriveReceipt)) {
+      next.photos = 'Please use “Upload original again” on the photos marked below before continuing.';
+    }
 
     if (index === 2) {
       if (draft.customerName.trim().length < 2) next.customerName = 'Please enter your name.';
@@ -312,6 +317,7 @@ export function OrderWizard({
 
       if (!res.ok || !data.url) {
         setErrors(data.errors ?? { form: data.error ?? 'Could not start the payment.' });
+        if (data.errors?.photos) setStep(1);
         setSubmitting(false);
         return;
       }
@@ -470,6 +476,7 @@ export function OrderWizard({
             </div>
 
             <PhotoUploader
+              driveRequired={driveRequired}
               photos={draft.photos}
               onChange={(photos) => set('photos', photos)}
               error={errors.photos}

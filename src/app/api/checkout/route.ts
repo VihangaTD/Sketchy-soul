@@ -11,6 +11,7 @@ import { createPayPalOrder, approvalLink, isPayPalConfigured } from '@/lib/paypa
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 import { COOKIES, COOKIE_MAX_AGE } from '@/lib/cookies';
 import { paymentOrigin } from '@/lib/payment-origin';
+import { fileOrderOriginals, OriginalPhotoError } from '@/lib/google-drive';
 
 /**
  * POST /api/checkout
@@ -110,6 +111,17 @@ export async function POST(request: Request) {
   }
 
   const reference = generateReference();
+  let orderPhotos = input.photos;
+  try {
+    orderPhotos = await fileOrderOriginals(reference, input.photos);
+  } catch (error) {
+    if (error instanceof OriginalPhotoError) {
+      return NextResponse.json({ error: error.message, errors: { photos: error.message } }, { status: 400 });
+    }
+    // Avoid logging Google authentication errors, which can contain tokens.
+    console.error('[checkout] Filing original photos failed:', error instanceof Error ? error.message : 'Unknown storage error');
+    return NextResponse.json({ error: 'Original photo storage is temporarily unavailable. Your uploads are saved; please try again shortly.' }, { status: 502 });
+  }
 
   let order;
   try {
@@ -146,7 +158,7 @@ export async function POST(request: Request) {
         notes: input.notes || null,
         consented: input.allowPortfolioUse,
 
-        photos: input.photos,
+        photos: orderPhotos,
 
         provider: provider === 'stripe' ? 'STRIPE' : 'PAYPAL',
 

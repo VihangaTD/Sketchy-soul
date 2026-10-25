@@ -30,6 +30,8 @@ export const metadata: Metadata = pageMetadata({
   noIndex: true,
 });
 
+import { isDriveConfigured } from '@/lib/google-drive';
+
 export default async function OrderPage({
   searchParams,
 }: {
@@ -79,6 +81,7 @@ export default async function OrderPage({
             initialPackageId={initialPackage}
             stripeEnabled={isStripeConfigured()}
             paypalEnabled={isPayPalConfigured()}
+            driveRequired={isDriveConfigured()}
           />
         </div>
       </section>
