@@ -98,7 +98,6 @@ export function OrderWizard({
   catalogue,
   initialPackageId,
   stripeEnabled,
-  paypalEnabled,
 }: {
   /** The live price list, loaded on the server so the running total here
       matches the amount /api/checkout will recompute and charge. */
@@ -107,6 +106,8 @@ export function OrderWizard({
   stripeEnabled: boolean;
   paypalEnabled: boolean;
 }) {
+  // Temporarily disabled in checkout. Restore the prop above to enable PayPal.
+  const paypalEnabled = false;
   const defaultProvider: 'stripe' | 'paypal' = stripeEnabled ? 'stripe' : 'paypal';
 
   const [step, setStep] = useState(0);
@@ -697,6 +698,7 @@ export function OrderWizard({
                   </button>
                 ) : null}
 
+                {/* PayPal temporarily hidden.
                 {paypalEnabled ? (
                   <button
                     type="button"
@@ -710,6 +712,7 @@ export function OrderWizard({
                     </span>
                   </button>
                 ) : null}
+                */}
               </div>
 
               {!stripeEnabled && !paypalEnabled ? (
