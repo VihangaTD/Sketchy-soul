@@ -73,6 +73,12 @@ function formatAddress(order: Order) {
  */
 export async function syncOrderToSheet(order: Order): Promise<{ ok: boolean; error?: string }> {
   const photos = orderPhotos(order);
+  const photoLinks = photos.map((photo, index) => [
+    `Photo ${index + 1}: ${photo.url}`,
+    photo.originalDriveId && /^[\w-]{1,200}$/.test(photo.originalDriveId)
+      ? `Original ${index + 1} (Google Drive): https://drive.google.com/file/d/${photo.originalDriveId}/view`
+      : null,
+  ].filter(Boolean).join('\n')).join('\n\n');
   const addOns = orderAddOns(order);
   const paidAt = (order.paidAt ?? new Date()).toISOString();
 
@@ -100,7 +106,7 @@ export async function syncOrderToSheet(order: Order): Promise<{ ok: boolean; err
         occasion: order.occasion ?? '',
         deadline: order.deadline ?? '',
         notes: order.notes ?? '',
-        photos: photos.map((p) => p.url).join('\n'),
+        photos: photoLinks,
         total: formatMoney(order.amountPaid ?? order.total),
         provider: order.provider ?? '',
         paymentReference: order.providerPaymentId ?? order.providerOrderId ?? '',
@@ -126,7 +132,7 @@ export async function syncOrderToSheet(order: Order): Promise<{ ok: boolean; err
           order.occasion ?? '',
           order.deadline ?? '',
           order.notes ?? '',
-          photos.map((p) => p.url).join('\n'),
+          photoLinks,
           ((order.amountPaid ?? order.total) / 100).toFixed(2),
           order.provider ?? '',
           order.providerPaymentId ?? order.providerOrderId ?? '',

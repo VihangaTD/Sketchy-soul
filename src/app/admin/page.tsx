@@ -131,7 +131,15 @@ export default async function AdminPage({ searchParams }: {
   return (
     <section className="section">
       <div className="shell">
-        <SectionHead as="h1" align="left" eyebrow="Studio Only" title="Orders" />
+        <div className="flex flex-wrap items-center justify-between gap-5">
+          <SectionHead as="h1" align="left" eyebrow="Studio Only" title="Orders" />
+          {isSheetsConfigured() ? (
+            <a href={`https://docs.google.com/spreadsheets/d/${encodeURIComponent(process.env.GOOGLE_SHEETS_ID!)}/edit`}
+              target="_blank" rel="noopener noreferrer" className="btn-ghost btn-sm w-full sm:w-auto">
+              Open Google Sheet
+            </a>
+          ) : null}
+        </div>
         {checkMessage ? <p role="status" className="mt-6 text-sm text-gold-soft">{checkMessage}</p> : null}
 
         {warnings.length > 0 ? (

@@ -154,7 +154,7 @@ export function buildOrderSchema(catalogue: PricingCatalogue) {
     // Spam trap — real people never fill a hidden field in.
     company: z.string().max(0).optional(),
   }).superRefine((order, ctx) => {
-    if (order.deliveryId === 'digital') return;
+    if (!catalogue.deliveryOptions.find((option) => option.id === order.deliveryId)?.requiresAddress) return;
     for (const [field, message] of [
       ['addressLine1', 'Please enter your address'],
       ['city', 'Please enter your city'],
@@ -162,7 +162,7 @@ export function buildOrderSchema(catalogue: PricingCatalogue) {
     ] as const) {
       if (!order[field]) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
     }
-  }).transform((order) => order.deliveryId === 'digital'
+  }).transform((order) => !catalogue.deliveryOptions.find((option) => option.id === order.deliveryId)?.requiresAddress
     ? { ...order, addressLine1: '', addressLine2: '', city: '', postalCode: '' }
     : order);
 }

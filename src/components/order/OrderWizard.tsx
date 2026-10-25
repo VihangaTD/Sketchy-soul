@@ -240,7 +240,7 @@ export function OrderWizard({
       if (!draft.country) next.country = 'Select your country.';
 
       if (!draft.customerPhone.trim()) next.customerPhone = 'Please enter your phone number.';
-      if (draft.deliveryId !== 'digital') {
+      if (priced.delivery.requiresAddress) {
       if (!draft.addressLine1.trim()) next.addressLine1 = 'Please enter your address.';
       if (!draft.city.trim()) next.city = 'Please enter your city.';
       if (!draft.postalCode.trim()) next.postalCode = 'Please enter your postal / ZIP code.';
@@ -500,7 +500,7 @@ export function OrderWizard({
             <div>
               <h2 className="heading">Where should it go?</h2>
               <p className="lede mt-3 max-w-[52ch]">
-                {draft.deliveryId === 'digital'
+                {!priced.delivery.requiresAddress
                   ? 'Enter your name, email and phone number. Your digital portrait will be delivered by email.'
                   : 'Enter your contact details and delivery address for your portrait.'}
               </p>
