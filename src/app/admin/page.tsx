@@ -19,6 +19,7 @@ import { ShippingForm } from '@/components/admin/ShippingForm';
 import { DigitalDeliveryForm } from '@/components/admin/DigitalDeliveryForm';
 import { OrderLimitSelect } from '@/components/admin/OrderLimitSelect';
 import { OrderFilters } from '@/components/admin/OrderFilters';
+import { DeleteOrderButton } from '@/components/admin/DeleteOrderButton';
 
 /**
  * Private order dashboard.
@@ -306,6 +307,9 @@ export default async function AdminPage({ searchParams }: {
                         <DigitalDeliveryForm orderId={order.id} downloadUrl={order.digitalDownloadUrl}
                           sentAt={order.digitalEmailSentAt?.toISOString() ?? null} />
                       ) : <span className="text-grey">{order.status !== 'PAID' ? 'Delivery controls become available after payment is confirmed.' : 'Contact the customer to arrange framed delivery.'}</span>}
+                    </div>
+                    <div className="border-t border-hairline pt-4 sm:col-span-2 xl:col-span-4">
+                      <DeleteOrderButton orderId={order.id} reference={order.reference} />
                     </div>
                     </div>
                   </details>
