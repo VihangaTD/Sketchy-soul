@@ -58,6 +58,7 @@ export interface OrderEmailData {
   packageSize: string;
   total: number;
   photoCount: number;
+  requiresShipping: boolean;
 }
 
 export async function sendOrderConfirmation(order: OrderEmailData) {
@@ -79,6 +80,10 @@ export async function sendOrderConfirmation(order: OrderEmailData) {
         <tr><td style="padding:6px 0">Reference photos</td><td style="text-align:right;color:#f2efea">${order.photoCount}</td></tr>
         <tr><td style="padding:12px 0 0;border-top:1px solid rgba(255,255,255,.08)">Paid</td><td style="padding:12px 0 0;border-top:1px solid rgba(255,255,255,.08);text-align:right;color:#d9bd8e;font-size:16px">${formatMoney(order.total)}</td></tr>
       </table>
+      ${order.requiresShipping ? `
+      <p style="margin:24px 0 0;font-size:13px;line-height:1.7;color:#8a8a8f">
+        International orders may incur import duties, customs fees or taxes. Any such charges not included at checkout are your responsibility.
+      </p>` : ''}
       <p style="margin:24px 0 0;font-size:13px;color:#8a8a8f">
         Reply to this email with anything you forgot to mention — extra photos
         are always welcome.

@@ -288,6 +288,7 @@ export async function markOrderPaid(params: {
     packageSize: order.packageSize,
     total: order.total,
     photoCount: photos.length,
+    requiresShipping: Boolean(order.addressLine1),
   };
 
   await Promise.allSettled([

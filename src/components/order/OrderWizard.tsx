@@ -795,6 +795,14 @@ export function OrderWizard({
               <OrderSummary priced={priced} />
             </div>
 
+            {priced.delivery.requiresAddress ? (
+              <p className="rounded-sm border border-hairline p-4 text-[12.5px] leading-relaxed text-grey">
+                Please note that international orders may be subject to import duties,
+                customs fees or taxes imposed by the destination country. Any applicable
+                charges not included at checkout are the responsibility of the customer.
+              </p>
+            ) : null}
+
             <button
               type="button"
               onClick={submit}
