@@ -156,7 +156,7 @@ the photos column of your Google Sheet.
 ### Sandbox payments on Vercel previews
 
 Sandbox payments should still mark orders PAID. Configure `STRIPE_SECRET_KEY`
-and `STRIPE_WEBHOOK_SECRET` in Vercel's **Preview** environment using the same
+and `STRIPE_WEBHOOK_SECRET`, plus `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, in Vercel's **Preview** environment using the same
 Stripe sandbox. The webhook secret must belong to the deployed endpoint, not
 the local `stripe listen` endpoint. Redeploy after changing variables.
 

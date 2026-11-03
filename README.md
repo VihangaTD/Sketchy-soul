@@ -32,11 +32,18 @@ touch money, storage or Google.
 | ------------------------ | ------------------------------------------------------ |
 | The whole site's design  | nothing                                                 |
 | The order form           | `DATABASE_URL` (uploads fall back to `public/uploads/`) |
-| Card checkout            | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`            |
+| Card checkout            | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` |
 | PayPal checkout          | `PAYPAL_CLIENT_ID`, `PAYPAL_CLIENT_SECRET`              |
 | Orders reaching a sheet  | `GOOGLE_SHEETS_ID` + service account                    |
 | The admin dashboard      | `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`                |
 | Editing content in `/admin` | `DATABASE_URL` + `npm run db:seed`                   |
+
+Stripe payments use Embedded Checkout on `/order/payment`. Keep your existing
+secret key and webhook secret, and set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` from
+the same Stripe account and test/live mode before building. Payment details go
+directly to Stripe. Some payment methods or bank authentication can still open
+an external page. Order confirmation and email delivery use the existing
+verified webhook and return-page flow.
 
 **Deploying? Read [DEPLOYMENT.md](DEPLOYMENT.md).** It is a numbered checklist
 of everything that has to change before the site takes real money.

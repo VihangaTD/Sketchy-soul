@@ -810,15 +810,16 @@ export function OrderWizard({
               className="btn-primary relative w-full overflow-hidden disabled:cursor-wait disabled:opacity-70"
             >
               {submitting
-                ? 'Taking you to payment…'
+                ? 'Opening payment…'
                 : `Pay ${formatMoney(priced.total)} securely`}
               {submitting ? <ProgressLine /> : null}
             </button>
 
             <p className="text-center text-[11px] leading-relaxed text-grey">
-              You will be redirected to{' '}
-              {draft.provider === 'stripe' ? 'Stripe' : 'PayPal'} to complete the
-              payment. Your order reaches the studio the moment it clears.
+              {draft.provider === 'stripe'
+                ? 'Continue to our secure payment page, powered by Stripe.'
+                : 'You will be redirected to PayPal to complete the payment.'}{' '}
+              Your order reaches the studio the moment it clears.
             </p>
           </div>
         ) : null}

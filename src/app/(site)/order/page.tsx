@@ -6,7 +6,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { defaultPackageId, getPackage, getPackageBySlug } from '@/lib/packages';
 import { getCatalogue } from '@/lib/cms/catalogue';
 import { copy, getCopy } from '@/lib/cms/copy';
-import { isStripeConfigured } from '@/lib/stripe';
+import { isEmbeddedStripeConfigured } from '@/lib/stripe';
 import { isPayPalConfigured } from '@/lib/paypal';
 import { breadcrumbSchema, pageMetadata } from '@/lib/seo';
 
@@ -79,7 +79,7 @@ export default async function OrderPage({
           <OrderWizard
             catalogue={catalogue}
             initialPackageId={initialPackage}
-            stripeEnabled={isStripeConfigured()}
+            stripeEnabled={isEmbeddedStripeConfigured()}
             paypalEnabled={isPayPalConfigured()}
             driveRequired={isDriveConfigured()}
           />

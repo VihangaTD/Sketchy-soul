@@ -21,6 +21,9 @@ let client: Stripe | null = null;
 
 export const isStripeConfigured = () => Boolean(process.env.STRIPE_SECRET_KEY);
 
+export const isEmbeddedStripeConfigured = () =>
+  isStripeConfigured() && Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+
 export function getStripe(): Stripe {
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error('STRIPE_SECRET_KEY is not set — Stripe checkout is unavailable.');

@@ -6,7 +6,7 @@ import { generateReference } from '@/lib/orders';
 import { priceOrder } from '@/lib/packages';
 import { getCatalogue } from '@/lib/cms/catalogue';
 import { buildOrderSchema, fieldErrors } from '@/lib/validation';
-import { getStripe, isStripeConfigured } from '@/lib/stripe';
+import { getStripe, isEmbeddedStripeConfigured } from '@/lib/stripe';
 import { createPayPalOrder, approvalLink, isPayPalConfigured } from '@/lib/paypal';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 import { COOKIES, COOKIE_MAX_AGE } from '@/lib/cookies';
@@ -21,7 +21,7 @@ import { fileOrderOriginals, OriginalPhotoError } from '@/lib/google-drive';
  *    ignored entirely, so a tampered request cannot buy an A2 for $1.
  * 3. Saves it to Postgres with status AWAITING_PAYMENT.
  * 4. Creates a Stripe Checkout session or a PayPal order.
- * 5. Returns the URL to redirect the customer to.
+ * 5. Returns our embedded payment page URL for Stripe, or PayPal's approval URL.
  *
  * The order is marked PAID only after provider verification (by webhook or
  * server-side reconciliation), never here — closing the tab must not grant a free
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   const provider = input.provider;
-  if (provider === 'stripe' && !isStripeConfigured()) {
+  if (provider === 'stripe' && !isEmbeddedStripeConfigured()) {
     return NextResponse.json(
       { error: 'Card payment is temporarily unavailable — please choose PayPal.' },
       { status: 503 },
@@ -196,6 +196,7 @@ export async function POST(request: Request) {
       const session = await stripe.checkout.sessions.create(
         {
           mode: 'payment',
+          ui_mode: 'embedded',
           // Prefilled so the customer does not retype it.
           customer_email: input.customerEmail,
           client_reference_id: order.reference,
@@ -216,8 +217,7 @@ export async function POST(request: Request) {
             metadata: { orderId: order.id, reference: order.reference },
             description: `Portrait commission ${order.reference}`,
           },
-          success_url: `${successUrl}&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: cancelUrl,
+          return_url: `${successUrl}&session_id={CHECKOUT_SESSION_ID}`,
           // A stale session must not hold a slot in the queue forever.
           expires_at: Math.floor(Date.now() / 1000) + 60 * 60 * 2,
           allow_promotion_codes: true,
@@ -226,14 +226,14 @@ export async function POST(request: Request) {
         { idempotencyKey: `checkout-${order.id}` },
       );
 
-      if (!session.url) throw new Error('Stripe returned a session without a URL.');
+      if (!session.client_secret) throw new Error('Stripe returned a session without a client secret.');
 
       await prisma.order.update({
         where: { id: order.id },
         data: { providerOrderId: session.id },
       });
 
-      redirectUrl = session.url;
+      redirectUrl = `${returnOrigin}/order/payment?ref=${encodeURIComponent(order.reference)}`;
     } else {
       // `priced.lines` already carries the delivery charge as a line of its
       // own. PayPal lists shipping separately in the breakdown AND validates
