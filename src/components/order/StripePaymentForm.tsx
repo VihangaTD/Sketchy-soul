@@ -14,6 +14,7 @@ export function StripePaymentForm({ clientSecret, publishableKey, successUrl }: 
   const [session, setSession] = useState<StripeCheckoutSession | null>(null);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [loadErrorMessage, setLoadErrorMessage] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
   const [promoCode, setPromoCode] = useState('');
@@ -24,14 +25,36 @@ export function StripePaymentForm({ clientSecret, publishableKey, successUrl }: 
     let element: StripePaymentElement | undefined;
     setReady(false);
     setLoadError(false);
+    setLoadErrorMessage('');
     setError('');
     setSession(null);
+
+    let stage = 'loading Stripe.js';
+    function reportLoadError(cause: unknown) {
+      if (disposed) return;
+      const rawMessage = cause instanceof Error ? cause.message
+        : cause && typeof cause === 'object' && 'message' in cause ? String(cause.message) : 'Unknown error';
+      const message = rawMessage
+        .replace(/\b(?:pk|sk|rk)_(?:test|live)_[A-Za-z0-9]+\b/g, '[redacted key]')
+        .replace(/\b(?:cs|pi|seti)_[A-Za-z0-9_]+\b/g, '[redacted payment session]')
+        .split(clientSecret).join('[redacted payment session]')
+        .split(publishableKey).join('[redacted key]');
+      console.error(`[stripe] Payment form failed while ${stage}: ${message}`);
+      setLoadErrorMessage(/key|api_key|account|livemode|test.mode/i.test(rawMessage)
+        ? 'Stripe could not authorize this payment form. Please contact the studio so we can check the payment configuration.'
+        : /expired|no such checkout|not found/i.test(rawMessage)
+          ? 'This payment session is no longer available. Please start a new order.'
+          : 'Payment could not load. Please try again, or contact the studio if the problem continues.');
+      setLoadError(true);
+      setReady(false);
+    }
 
     async function mount() {
       try {
         const stripe = await loadStripe(publishableKey);
         if (disposed) return;
         if (!stripe) throw new Error('Stripe could not load.');
+        stage = 'initializing the checkout session';
         const checkout = await stripe.initCheckout({
           fetchClientSecret: async () => clientSecret,
           elementsOptions: {
@@ -45,17 +68,14 @@ export function StripePaymentForm({ clientSecret, publishableKey, successUrl }: 
         checkoutRef.current = checkout;
         setSession(checkout.session());
         checkout.on('change', (next) => { if (!disposed) setSession(next); });
+        stage = 'creating the Payment Element';
         element = checkout.createPaymentElement({ layout: 'accordion' });
         element.on('ready', () => { if (!disposed) setReady(true); });
-        element.on('loaderror', () => {
-          if (!disposed) {
-            setLoadError(true);
-            setReady(false);
-          }
-        });
+        element.on('loaderror', (event) => reportLoadError(event.error));
+        stage = 'mounting the Payment Element';
         if (container.current) element.mount(container.current);
-      } catch {
-        if (!disposed) setLoadError(true);
+      } catch (cause) {
+        reportLoadError(cause);
       }
     }
 
@@ -138,7 +158,7 @@ export function StripePaymentForm({ clientSecret, publishableKey, successUrl }: 
       {!ready && !loadError ? <p role="status" className="text-sm text-grey">Loading secure payment…</p> : null}
       {loadError ? (
         <div role="alert">
-          <p className="text-sm text-grey">Payment could not load. Check your connection and try again.</p>
+          <p className="text-sm text-grey">{loadErrorMessage}</p>
           <button type="button" className="btn-primary mt-4" onClick={() => setAttempt((value) => value + 1)}>Try again</button>
         </div>
       ) : null}
