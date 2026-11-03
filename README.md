@@ -38,7 +38,7 @@ touch money, storage or Google.
 | The admin dashboard      | `ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`                |
 | Editing content in `/admin` | `DATABASE_URL` + `npm run db:seed`                   |
 
-Stripe payments use Embedded Checkout on `/order/payment`. Keep your existing
+Stripe payments use a custom Payment Element form on `/order/payment`. Keep your existing
 secret key and webhook secret, and set `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` from
 the same Stripe account and test/live mode before building. Payment details go
 directly to Stripe. Some payment methods or bank authentication can still open

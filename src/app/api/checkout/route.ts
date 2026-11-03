@@ -6,7 +6,7 @@ import { generateReference } from '@/lib/orders';
 import { priceOrder } from '@/lib/packages';
 import { getCatalogue } from '@/lib/cms/catalogue';
 import { buildOrderSchema, fieldErrors } from '@/lib/validation';
-import { getStripe, isEmbeddedStripeConfigured } from '@/lib/stripe';
+import { getStripe, isStripePaymentConfigured } from '@/lib/stripe';
 import { createPayPalOrder, approvalLink, isPayPalConfigured } from '@/lib/paypal';
 import { clientIp, rateLimit } from '@/lib/rate-limit';
 import { COOKIES, COOKIE_MAX_AGE } from '@/lib/cookies';
@@ -21,7 +21,7 @@ import { fileOrderOriginals, OriginalPhotoError } from '@/lib/google-drive';
  *    ignored entirely, so a tampered request cannot buy an A2 for $1.
  * 3. Saves it to Postgres with status AWAITING_PAYMENT.
  * 4. Creates a Stripe Checkout session or a PayPal order.
- * 5. Returns our embedded payment page URL for Stripe, or PayPal's approval URL.
+ * 5. Returns our Payment Element page URL for Stripe, or PayPal's approval URL.
  *
  * The order is marked PAID only after provider verification (by webhook or
  * server-side reconciliation), never here — closing the tab must not grant a free
@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   const provider = input.provider;
-  if (provider === 'stripe' && !isEmbeddedStripeConfigured()) {
+  if (provider === 'stripe' && !isStripePaymentConfigured()) {
     return NextResponse.json(
       { error: 'Card payment is temporarily unavailable — please choose PayPal.' },
       { status: 503 },
@@ -196,7 +196,7 @@ export async function POST(request: Request) {
       const session = await stripe.checkout.sessions.create(
         {
           mode: 'payment',
-          ui_mode: 'embedded',
+          ui_mode: 'custom',
           // Prefilled so the customer does not retype it.
           customer_email: input.customerEmail,
           client_reference_id: order.reference,

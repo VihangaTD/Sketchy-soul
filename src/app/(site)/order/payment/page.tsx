@@ -2,11 +2,11 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { EmbeddedPayment } from '@/components/order/EmbeddedPayment';
+import { StripePaymentForm } from '@/components/order/StripePaymentForm';
 import { SectionHead } from '@/components/SectionHead';
 import { COOKIES } from '@/lib/cookies';
 import { prisma } from '@/lib/prisma';
-import { getStripe, isEmbeddedStripeConfigured } from '@/lib/stripe';
+import { getStripe, isStripePaymentConfigured } from '@/lib/stripe';
 import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
@@ -32,8 +32,9 @@ export default async function PaymentPage({ searchParams }: {
 
   let clientSecret: string | null = null;
   let complete = false;
+  let previousCheckout = false;
   let expired = order.status !== 'AWAITING_PAYMENT';
-  if (!expired && order.providerOrderId && isEmbeddedStripeConfigured()) {
+  if (!expired && order.providerOrderId && isStripePaymentConfigured()) {
     try {
       const session = await getStripe().checkout.sessions.retrieve(order.providerOrderId);
       if (session.metadata?.orderId !== order.id || session.client_reference_id !== order.reference) {
@@ -41,11 +42,12 @@ export default async function PaymentPage({ searchParams }: {
       }
       complete = session.status === 'complete';
       expired = session.status === 'expired';
-      if (session.status === 'open' && session.ui_mode === 'embedded') {
+      previousCheckout = session.status === 'open' && session.ui_mode !== 'custom';
+      if (session.status === 'open' && session.ui_mode === 'custom') {
         clientSecret = session.client_secret;
       }
     } catch {
-      console.error('[stripe] Embedded payment session could not be loaded.');
+      console.error('[stripe] Payment Element session could not be loaded.');
     }
   }
   if (complete) redirect(successUrl);
@@ -63,12 +65,12 @@ export default async function PaymentPage({ searchParams }: {
                 charges not included at checkout are the responsibility of the customer.
               </p>
             ) : null}
-            <EmbeddedPayment clientSecret={clientSecret} publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!} />
+            <StripePaymentForm clientSecret={clientSecret} publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!} successUrl={successUrl} />
           </div>
         ) : (
           <div className="mt-8 text-center">
             <p role="alert" className="text-grey">
-              {expired ? 'This payment session has expired. Please start a new order.' : 'Payment is temporarily unavailable. Please reload this page to try again.'}
+              {previousCheckout ? 'Checkout has been updated. Please start a new order to use the new payment form.' : expired ? 'This payment session has expired. Please start a new order.' : 'Payment is temporarily unavailable. Please reload this page to try again.'}
             </p>
             <Link href="/order" className="btn-primary mt-6">Return to order</Link>
           </div>

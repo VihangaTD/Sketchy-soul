@@ -153,6 +153,12 @@ the photos column of your Google Sheet.
 
 ## 4. Stripe (card payments)
 
+The site uses Stripe Payment Element on `/order/payment`, with a custom Pay
+button and order summary. Existing Stripe secret keys and webhook secrets still
+apply. Set the matching publishable key before building; restart development or
+rebuild your deployment after changing it. Sessions opened before switching
+from Embedded Checkout must be replaced by starting a new checkout.
+
 ### Sandbox payments on Vercel previews
 
 Sandbox payments should still mark orders PAID. Configure `STRIPE_SECRET_KEY`

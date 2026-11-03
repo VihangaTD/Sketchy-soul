@@ -21,7 +21,7 @@ let client: Stripe | null = null;
 
 export const isStripeConfigured = () => Boolean(process.env.STRIPE_SECRET_KEY);
 
-export const isEmbeddedStripeConfigured = () =>
+export const isStripePaymentConfigured = () =>
   isStripeConfigured() && Boolean(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 export function getStripe(): Stripe {
